@@ -1,6 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Role } from "@shared/constants";
-import type { AuthenticatedUser } from "../types/authenticated-user";
+import type { RequestUser, AppRole } from "@api/auth/auth.types";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
 import type { Database } from "../../db/client";
 import {
@@ -13,17 +12,17 @@ import {
 } from "../../db/schema";
 import { and, eq } from "drizzle-orm";
 
-const ADMIN_ROLES: Role[] = ["SUPERADMIN", "ADMIN", "OPERATOR"];
+const ADMIN_ROLES: AppRole[] = ["SUPERADMIN", "ADMIN", "OPERATOR"];
 
 @Injectable()
 export class OwnershipService {
   constructor(@Inject(DRIZZLE_CLIENT) private readonly db: Database) {}
 
-  private isAdmin(user: AuthenticatedUser) {
+  private isAdmin(user: RequestUser) {
     return ADMIN_ROLES.includes(user.role);
   }
 
-  async canAccessClass(user: AuthenticatedUser, classId: string) {
+  async canAccessClass(user: RequestUser, classId: string) {
     if (this.isAdmin(user)) {
       return true;
     }
@@ -65,7 +64,7 @@ export class OwnershipService {
     return Boolean(schedule);
   }
 
-  async canAccessSubject(user: AuthenticatedUser, subjectId: string) {
+  async canAccessSubject(user: RequestUser, subjectId: string) {
     if (this.isAdmin(user)) {
       return true;
     }
@@ -94,7 +93,7 @@ export class OwnershipService {
     return Boolean(scheduled);
   }
 
-  async canAccessEnrollment(user: AuthenticatedUser, enrollmentId: string) {
+  async canAccessEnrollment(user: RequestUser, enrollmentId: string) {
     if (this.isAdmin(user)) {
       return true;
     }
@@ -110,7 +109,7 @@ export class OwnershipService {
     return this.canAccessClass(user, enrollmentRecord.classId);
   }
 
-  async canAccessGrade(user: AuthenticatedUser, gradeId: string) {
+  async canAccessGrade(user: RequestUser, gradeId: string) {
     if (this.isAdmin(user)) {
       return true;
     }
@@ -130,7 +129,7 @@ export class OwnershipService {
     return this.canAccessEnrollment(user, gradeRecord.enrollmentId);
   }
 
-  async canAccessAttendance(user: AuthenticatedUser, attendanceId: string) {
+  async canAccessAttendance(user: RequestUser, attendanceId: string) {
     if (this.isAdmin(user)) {
       return true;
     }
@@ -150,7 +149,7 @@ export class OwnershipService {
     return this.canAccessEnrollment(user, attendanceRecord.enrollmentId);
   }
 
-  async canAccessReport(user: AuthenticatedUser, enrollmentId: string) {
+  async canAccessReport(user: RequestUser, enrollmentId: string) {
     if (this.isAdmin(user)) {
       return true;
     }

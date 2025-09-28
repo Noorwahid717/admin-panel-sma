@@ -11,7 +11,7 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { GradesService } from "./grades.service";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import type { AuthenticatedUser } from "../../common/types/authenticated-user";
+import type { RequestUser } from "@api/auth/auth.types";
 
 @Controller({ path: "grades", version: "1" })
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -27,7 +27,7 @@ export class GradesController {
   @Post()
   @Roles("SUPERADMIN", "ADMIN", "OPERATOR", "TEACHER")
   create(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: RequestUser,
     @Body(new ZodValidationPipe(createGradeSchema)) payload: CreateGradeInput
   ) {
     return this.gradesService.upsert(user, payload);

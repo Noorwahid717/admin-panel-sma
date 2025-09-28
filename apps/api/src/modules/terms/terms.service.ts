@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import type { CreateTermInput, UpdateTermInput } from "@shared/schemas";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
 import type { Database } from "../../db/client";

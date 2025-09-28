@@ -5,15 +5,19 @@ import { verify, hash } from "argon2";
 import { nanoid } from "nanoid";
 import { addSeconds } from "date-fns";
 import type { LoginInput, RefreshInput, RegisterUserInput } from "@shared/schemas";
-import type { Role } from "@shared/constants";
 import { UsersService } from "../users/users.service";
-import type { AuthenticatedUser } from "../../common/types/authenticated-user";
 import { RedisService } from "../../infrastructure/redis/redis.service";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
 import type { Database } from "../../db/client";
 import { refreshTokens, users } from "../../db/schema";
 import type { EnvironmentVariables } from "../../config/env.validation";
-import type { JwtPayload, Tokens } from "./auth.types";
+import type {
+  AppRole,
+  AuthenticatedUser,
+  JwtPayload,
+  RequestUser,
+  Tokens,
+} from "@api/auth/auth.types";
 import { eq } from "drizzle-orm";
 
 @Injectable()
@@ -37,6 +41,7 @@ export class AuthService {
   private async buildTokens(user: AuthenticatedUser, tokenId: string): Promise<Tokens> {
     const payload: JwtPayload = {
       sub: user.id,
+      id: user.id,
       email: user.email,
       role: user.role,
       fullName: user.fullName,
@@ -65,11 +70,7 @@ export class AuthService {
     };
   }
 
-  private async persistRefreshToken(
-    user: AuthenticatedUser,
-    tokenId: string,
-    refreshToken: string
-  ) {
+  private async persistRefreshToken(user: RequestUser, tokenId: string, refreshToken: string) {
     const hashed = await hash(refreshToken);
     const expiresAt = addSeconds(new Date(), this.refreshTtl);
 
@@ -103,7 +104,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
-      role: user.role as Role,
+      role: user.role as AppRole,
       teacherId: user.teacherId,
       studentId: user.studentId,
     };

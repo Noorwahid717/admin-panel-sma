@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { StoragePresignInput } from "@shared/schemas";
-import type { AuthenticatedUser } from "../../common/types/authenticated-user";
+import type { RequestUser } from "@api/auth/auth.types";
 import { nanoid } from "nanoid";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -90,7 +90,7 @@ export class StorageService {
     const sanitizedFolder = this.sanitizeSegment(folder);
     const normalizedName = fileName
       .trim()
-      .replace(/[^a-zA-Z0-9\.\-_]+/g, "-")
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "")
       .slice(0, 180);
@@ -99,7 +99,7 @@ export class StorageService {
     return `${sanitizedFolder}/${uniqueSuffix}-${normalizedName}`;
   }
 
-  async presign(user: AuthenticatedUser, payload: StoragePresignInput): Promise<PresignResult> {
+  async presign(user: RequestUser, payload: StoragePresignInput): Promise<PresignResult> {
     const objectKey = this.createObjectKey(payload.fileName, payload.folder ?? user.id);
 
     if (this.driver === "r2") {

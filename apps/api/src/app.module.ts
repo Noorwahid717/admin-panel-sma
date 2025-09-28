@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
-import { environmentSchema, validateEnvironment } from "./config/env.validation";
+import { validateEnvironment } from "./config/env.validation";
 import { DatabaseModule } from "./infrastructure/database/database.module";
 import { RedisModule } from "./infrastructure/redis/redis.module";
 import { QueueModule } from "./infrastructure/queue/queue.module";

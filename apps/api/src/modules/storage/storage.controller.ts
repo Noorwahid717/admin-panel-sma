@@ -6,7 +6,7 @@ import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { storagePresignSchema, type StoragePresignInput } from "@shared/schemas";
 import { StorageService } from "./storage.service";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import type { AuthenticatedUser } from "../../common/types/authenticated-user";
+import type { RequestUser } from "@api/auth/auth.types";
 
 @Controller({ path: "storage", version: "1" })
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -16,7 +16,7 @@ export class StorageController {
 
   @Post("presign")
   async presign(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: RequestUser,
     @Body(new ZodValidationPipe(storagePresignSchema)) payload: StoragePresignInput
   ) {
     return this.storageService.presign(user, payload);

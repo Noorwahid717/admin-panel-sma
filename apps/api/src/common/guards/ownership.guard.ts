@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { OWNERSHIP_KEY, type OwnershipMetadata } from "../decorators/ownership.decorator";
 import { OwnershipService } from "../services/ownership.service";
-import type { AuthenticatedUser } from "../types/authenticated-user";
+import type { RequestUser } from "@api/auth/auth.types";
 
 @Injectable()
 export class OwnershipGuard implements CanActivate {
@@ -22,7 +22,7 @@ export class OwnershipGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const user = request.user as AuthenticatedUser | undefined;
+    const user = request.user as RequestUser | undefined;
 
     if (!user) {
       return false;
