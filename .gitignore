@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.pnpm-store/
+.env
+.env.local
+.env.*.local
+apps/*/.env
+apps/*/.env.local
+apps/*/dist
+coverage/
+husky/_
+.DS_Store
+.idea/
+.vscode/

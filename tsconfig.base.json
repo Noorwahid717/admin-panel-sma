@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["apps/shared/src/*"],
+      "@api/*": ["apps/api/src/*"],
+      "@worker/*": ["apps/worker/src/*"],
+      "@admin/*": ["apps/admin/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}
