@@ -10,7 +10,7 @@ import {
   type CreateAttendanceRecordInput,
 } from "@shared/schemas";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import type { AuthenticatedUser } from "../../common/types/authenticated-user";
+import type { RequestUser } from "@api/auth/auth.types";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { OwnershipGuard } from "../../common/guards/ownership.guard";
@@ -24,7 +24,7 @@ export class AttendanceController {
 
   @Post("bulk")
   async bulkUpsert(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: RequestUser,
     @Body(new ZodValidationPipe(bulkAttendanceSchema)) payload: BulkAttendanceInput
   ) {
     return this.attendanceService.bulkUpsert(user, payload);
@@ -32,7 +32,7 @@ export class AttendanceController {
 
   @Post()
   async upsert(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: RequestUser,
     @Body(new ZodValidationPipe(createAttendanceRecordSchema)) payload: CreateAttendanceRecordInput
   ) {
     return this.attendanceService.upsertRecord(user, payload);

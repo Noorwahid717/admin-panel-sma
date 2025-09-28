@@ -13,7 +13,7 @@ import {
   teachers,
 } from "../../db/schema";
 import { nanoid } from "nanoid";
-import type { AuthenticatedUser } from "../../common/types/authenticated-user";
+import type { RequestUser } from "@api/auth/auth.types";
 import { OwnershipService } from "../../common/services/ownership.service";
 
 @Injectable()
@@ -70,7 +70,7 @@ export class GradesService {
       .orderBy(gradeComponents.name);
   }
 
-  async upsert(user: AuthenticatedUser, payload: CreateGradeInput) {
+  async upsert(user: RequestUser, payload: CreateGradeInput) {
     const canAccess = await this.ownershipService.canAccessEnrollment(user, payload.enrollmentId);
     if (!canAccess) {
       throw new UnauthorizedException("Forbidden");

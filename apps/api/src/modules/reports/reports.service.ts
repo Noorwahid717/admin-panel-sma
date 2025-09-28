@@ -1,17 +1,16 @@
 import { Inject, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import type { ReportRequestInput } from "@shared/schemas";
-import type { Role } from "@shared/constants";
 import { REPORT_PDF_QUEUE } from "../../infrastructure/queue/queue.constants";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
 import type { Database } from "../../db/client";
 import { classes, enrollments, reportJobs, students, terms } from "../../db/schema";
 import { and, desc, eq, type SQL } from "drizzle-orm";
 import { OwnershipService } from "../../common/services/ownership.service";
-import type { AuthenticatedUser } from "../../common/types/authenticated-user";
+import type { AppRole, RequestUser } from "@api/auth/auth.types";
 import type { Queue } from "bullmq";
 import { nanoid } from "nanoid";
 
-const ADMIN_ROLES = new Set<Role>(["SUPERADMIN", "ADMIN", "OPERATOR"]);
+const ADMIN_ROLES = new Set<AppRole>(["SUPERADMIN", "ADMIN", "OPERATOR"]);
 
 type ReportJobRow = {
   job: typeof reportJobs.$inferSelect;
@@ -29,11 +28,11 @@ export class ReportsService {
     @Inject(REPORT_PDF_QUEUE) private readonly reportQueue: Queue
   ) {}
 
-  private isAdmin(user: AuthenticatedUser) {
+  private isAdmin(user: RequestUser) {
     return ADMIN_ROLES.has(user.role);
   }
 
-  private async ensureEnrollmentAccess(user: AuthenticatedUser, enrollmentId: string) {
+  private async ensureEnrollmentAccess(user: RequestUser, enrollmentId: string) {
     const canAccess = await this.ownershipService.canAccessEnrollment(user, enrollmentId);
     if (!canAccess) {
       throw new UnauthorizedException("Forbidden");
@@ -60,7 +59,7 @@ export class ReportsService {
     return row as ReportJobRow | undefined;
   }
 
-  async request(user: AuthenticatedUser, payload: ReportRequestInput) {
+  async request(user: RequestUser, payload: ReportRequestInput) {
     await this.ensureEnrollmentAccess(user, payload.enrollmentId);
 
     const existing = await this.db.query.reportJobs.findFirst({
@@ -122,7 +121,7 @@ export class ReportsService {
     return row;
   }
 
-  async list(user: AuthenticatedUser, status?: string) {
+  async list(user: RequestUser, status?: string) {
     const conditions = [];
 
     if (status) {
@@ -168,7 +167,7 @@ export class ReportsService {
     return filtered;
   }
 
-  async findById(user: AuthenticatedUser, id: string) {
+  async findById(user: RequestUser, id: string) {
     const row = await this.loadJobWithRelations(eq(reportJobs.id, id));
 
     if (!row) {
@@ -183,7 +182,7 @@ export class ReportsService {
     return row;
   }
 
-  async findByEnrollment(user: AuthenticatedUser, enrollmentId: string) {
+  async findByEnrollment(user: RequestUser, enrollmentId: string) {
     await this.ensureEnrollmentAccess(user, enrollmentId);
 
     const row = await this.loadJobWithRelations(eq(reportJobs.enrollmentId, enrollmentId));

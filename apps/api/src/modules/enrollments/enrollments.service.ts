@@ -2,7 +2,7 @@ import { Inject, Injectable, ConflictException, NotFoundException } from "@nestj
 import type { BulkEnrollmentInput, CreateEnrollmentInput } from "@shared/schemas";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
 import type { Database } from "../../db/client";
-import { enrollments, students } from "../../db/schema";
+import { enrollments } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 

@@ -9,7 +9,7 @@ import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants
 import type { Database } from "../../db/client";
 import { attendance, classes, enrollments, students, subjects, terms } from "../../db/schema";
 import { nanoid } from "nanoid";
-import type { AuthenticatedUser } from "../../common/types/authenticated-user";
+import type { RequestUser } from "@api/auth/auth.types";
 import { OwnershipService } from "../../common/services/ownership.service";
 
 @Injectable()
@@ -19,14 +19,14 @@ export class AttendanceService {
     private readonly ownershipService: OwnershipService
   ) {}
 
-  private async ensureEnrollmentAccess(user: AuthenticatedUser, enrollmentId: string) {
+  private async ensureEnrollmentAccess(user: RequestUser, enrollmentId: string) {
     const canAccess = await this.ownershipService.canAccessEnrollment(user, enrollmentId);
     if (!canAccess) {
       throw new UnauthorizedException("Forbidden");
     }
   }
 
-  async upsertRecord(user: AuthenticatedUser, payload: CreateAttendanceRecordInput) {
+  async upsertRecord(user: RequestUser, payload: CreateAttendanceRecordInput) {
     await this.ensureEnrollmentAccess(user, payload.enrollmentId);
 
     const [record] = await this.db
@@ -54,7 +54,7 @@ export class AttendanceService {
     return record;
   }
 
-  async bulkUpsert(user: AuthenticatedUser, payload: BulkAttendanceInput) {
+  async bulkUpsert(user: RequestUser, payload: BulkAttendanceInput) {
     const canAccessClass = await this.ownershipService.canAccessClass(user, payload.classId);
     if (!canAccessClass) {
       throw new UnauthorizedException("Forbidden");
