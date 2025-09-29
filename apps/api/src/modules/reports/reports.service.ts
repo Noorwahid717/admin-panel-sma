@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import type { ReportRequestInput } from "@shared/schemas";
+import type { ReportPdfJobData, ReportRequestInput } from "@shared/schemas";
 import { REPORT_PDF_QUEUE } from "../../infrastructure/queue/queue.constants";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
 import type { Database } from "../../db/client";
@@ -95,23 +95,21 @@ export class ReportsService {
       jobRecord = created;
     }
 
-    await this.reportQueue.add(
-      "generate-report",
-      {
-        reportJobId: jobRecord.id,
-        enrollmentId: jobRecord.enrollmentId,
-        requestedBy: user.id,
+    const jobPayload: ReportPdfJobData = {
+      reportJobId: jobRecord.id,
+      enrollmentId: jobRecord.enrollmentId,
+      requestedBy: user.id,
+    };
+
+    await this.reportQueue.add("generate-report", jobPayload, {
+      jobId: jobRecord.id,
+      removeOnComplete: true,
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 1000,
       },
-      {
-        jobId: jobRecord.id,
-        removeOnComplete: true,
-        attempts: 3,
-        backoff: {
-          type: "exponential",
-          delay: 1000,
-        },
-      }
-    );
+    });
 
     const row = await this.loadJobWithRelations(eq(reportJobs.id, jobRecord.id));
     if (!row) {
