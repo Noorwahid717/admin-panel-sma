@@ -1,10 +1,10 @@
-import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
-import { verify, hash } from "argon2";
+import { verify } from "argon2";
 import { nanoid } from "nanoid";
-import { addSeconds } from "date-fns";
-import type { LoginInput, RefreshInput, RegisterUserInput } from "@shared/schemas";
+import type { Request } from "express";
+import type { LoginInput, LogoutInput, RefreshInput, RegisterUserInput } from "@shared/schemas";
 import { UsersService } from "../users/users.service";
 import { RedisService } from "../../infrastructure/redis/redis.service";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
@@ -18,24 +18,65 @@ import type {
   RequestUser,
   Tokens,
 } from "@api/auth/auth.types";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
+
+type RequestContext = {
+  ip: string;
+  userAgent: string;
+};
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService<EnvironmentVariables>,
-    private readonly redisService: RedisService,
+    @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject(JwtService) private readonly jwtService: JwtService,
+    @Inject(ConfigService) private readonly configService: ConfigService<EnvironmentVariables>,
+    @Inject(RedisService) private readonly redisService: RedisService,
     @Inject(DRIZZLE_CLIENT) private readonly db: Database
   ) {}
 
+  private getConfigNumber(key: keyof EnvironmentVariables, fallback: number) {
+    const value = this.configService?.get(key, { infer: true });
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+
+    const raw = process.env[key as string];
+    const parsed = raw ? Number(raw) : NaN;
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  private getConfigString(key: keyof EnvironmentVariables, fallback = "") {
+    const value = this.configService?.get(key, { infer: true });
+    if (typeof value === "string") {
+      return value;
+    }
+    if (typeof value === "number") {
+      return String(value);
+    }
+
+    const raw = process.env[key as string];
+    if (raw !== undefined) {
+      return raw;
+    }
+
+    return fallback;
+  }
+
   private get accessTtl() {
-    return this.configService.get("JWT_ACCESS_TTL", { infer: true }) ?? 900;
+    return this.getConfigNumber("JWT_ACCESS_TTL", 900);
   }
 
   private get refreshTtl() {
-    return this.configService.get("JWT_REFRESH_TTL", { infer: true }) ?? 2592000;
+    return this.getConfigNumber("JWT_REFRESH_TTL", 2592000);
+  }
+
+  private get maxLoginAttempts() {
+    return this.getConfigNumber("AUTH_MAX_LOGIN_ATTEMPTS", 5);
+  }
+
+  private get lockoutDuration() {
+    return this.getConfigNumber("AUTH_LOCKOUT_DURATION", 900);
   }
 
   private async buildTokens(user: AuthenticatedUser, tokenId: string): Promise<Tokens> {
@@ -52,12 +93,14 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get("JWT_ACCESS_SECRET", { infer: true }),
+        secret: this.getConfigString("JWT_ACCESS_SECRET"),
         expiresIn: this.accessTtl,
+        jwtid: tokenId,
       }),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get("JWT_REFRESH_SECRET", { infer: true }),
+        secret: this.getConfigString("JWT_REFRESH_SECRET"),
         expiresIn: this.refreshTtl,
+        jwtid: tokenId,
       }),
     ]);
 
@@ -70,33 +113,12 @@ export class AuthService {
     };
   }
 
-  private async persistRefreshToken(user: RequestUser, tokenId: string, refreshToken: string) {
-    const hashed = await hash(refreshToken);
-    const expiresAt = addSeconds(new Date(), this.refreshTtl);
-
-    await this.db
-      .insert(refreshTokens)
-      .values({
-        id: tokenId,
-        userId: user.id,
-        tokenHash: hashed,
-        expiresAt,
-      })
-      .onConflictDoUpdate({
-        target: refreshTokens.id,
-        set: { tokenHash: hashed, expiresAt },
-      });
-
-    await this.redisService.client.set(
-      this.refreshCacheKey(user.id, tokenId),
-      hashed,
-      "EX",
-      this.refreshTtl
-    );
+  private loginAttemptKey(email: string, ip: string) {
+    return `auth:attempt:${email}:${ip}`;
   }
 
-  private refreshCacheKey(userId: string, tokenId: string) {
-    return `refresh:${userId}:${tokenId}`;
+  private loginBlockKey(email: string, ip: string) {
+    return `auth:block:${email}:${ip}`;
   }
 
   private mapUser(user: typeof users.$inferSelect): AuthenticatedUser {
@@ -110,54 +132,139 @@ export class AuthService {
     };
   }
 
-  async validateUser(email: string, plainPassword: string): Promise<AuthenticatedUser> {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
-    }
-
-    const passwordMatches = await verify(user.password, plainPassword);
-    if (!passwordMatches) {
-      throw new UnauthorizedException("Invalid credentials");
-    }
-
-    return this.mapUser(user);
+  private extractRequestContext(request?: Request): RequestContext {
+    return {
+      ip: this.getRequestIp(request),
+      userAgent: this.getUserAgent(request),
+    };
   }
 
-  async login(payload: LoginInput): Promise<Tokens> {
-    const user = await this.validateUser(payload.email, payload.password);
+  private getRequestIp(request?: Request) {
+    const forwardedFor = request?.headers["x-forwarded-for"];
+    if (Array.isArray(forwardedFor)) {
+      if (forwardedFor.length > 0) {
+        return forwardedFor[0].split(",")[0].trim();
+      }
+    } else if (typeof forwardedFor === "string" && forwardedFor.length > 0) {
+      return forwardedFor.split(",")[0].trim();
+    }
+
+    return request?.ip ?? request?.socket?.remoteAddress ?? "unknown";
+  }
+
+  private getUserAgent(request?: Request) {
+    const header = request?.headers["user-agent"];
+    if (Array.isArray(header)) {
+      return header.join(";");
+    }
+    return header ?? "unknown";
+  }
+
+  private async ensureNotLocked(email: string, ip: string) {
+    const blockKey = this.loginBlockKey(email, ip);
+    const isBlocked = await this.redisService.client.exists(blockKey);
+
+    if (isBlocked) {
+      const ttl = await this.redisService.client.ttl(blockKey);
+      throw new UnauthorizedException(
+        ttl > 0
+          ? `Account temporarily locked. Try again in ${ttl} seconds.`
+          : "Account temporarily locked."
+      );
+    }
+  }
+
+  private async registerFailedAttempt(email: string, ip: string) {
+    const attemptKey = this.loginAttemptKey(email, ip);
+    const blockKey = this.loginBlockKey(email, ip);
+
+    const attempts = await this.redisService.client.incr(attemptKey);
+    if (attempts === 1) {
+      await this.redisService.client.expire(attemptKey, this.lockoutDuration);
+    }
+
+    if (attempts >= this.maxLoginAttempts) {
+      await this.redisService.client.set(blockKey, "1", "EX", this.lockoutDuration);
+      await this.redisService.client.del(attemptKey);
+    }
+  }
+
+  private async clearLoginAttempts(email: string, ip: string) {
+    const attemptKey = this.loginAttemptKey(email, ip);
+    const blockKey = this.loginBlockKey(email, ip);
+    await this.redisService.client.del(attemptKey, blockKey);
+  }
+
+  private async persistRefreshToken(
+    user: AuthenticatedUser,
+    tokenId: string,
+    context: RequestContext
+  ) {
+    const row: typeof refreshTokens.$inferInsert = {
+      id: nanoid(),
+      userId: user.id,
+      jti: tokenId,
+      userAgent: context.userAgent,
+      ipAddress: context.ip,
+    };
+
+    await this.db.insert(refreshTokens).values(row);
+  }
+
+  private async markTokenRevoked(recordId: string) {
+    await this.db
+      .update(refreshTokens)
+      .set({ revokedAt: new Date() })
+      .where(eq(refreshTokens.id, recordId));
+  }
+
+  private async issueTokens(user: AuthenticatedUser, context: RequestContext): Promise<Tokens> {
     const tokenId = nanoid();
     const tokens = await this.buildTokens(user, tokenId);
-    await this.persistRefreshToken(user, tokenId, tokens.refreshToken);
+    await this.persistRefreshToken(user, tokenId, context);
     return tokens;
   }
 
-  async refresh(payload: RefreshInput): Promise<Tokens> {
-    const decoded = await this.jwtService.verifyAsync<JwtPayload>(payload.refreshToken, {
-      secret: this.configService.get("JWT_REFRESH_SECRET", { infer: true }),
-    });
+  async login(payload: LoginInput, request?: Request): Promise<Tokens> {
+    const email = payload.email.toLowerCase();
+    const context = this.extractRequestContext(request);
 
-    const cacheKey = this.refreshCacheKey(decoded.sub, decoded.tokenId);
-    const cachedHash = await this.redisService.client.get(cacheKey);
+    await this.ensureNotLocked(email, context.ip);
 
-    if (!cachedHash) {
-      throw new UnauthorizedException("Refresh token revoked");
+    const userRecord = await this.usersService.findByEmail(email);
+    if (!userRecord) {
+      await this.registerFailedAttempt(email, context.ip);
+      throw new UnauthorizedException("Invalid credentials");
+    }
+
+    const passwordMatches = await verify(userRecord.password, payload.password).catch(() => false);
+    if (!passwordMatches) {
+      await this.registerFailedAttempt(email, context.ip);
+      throw new UnauthorizedException("Invalid credentials");
+    }
+
+    await this.clearLoginAttempts(email, context.ip);
+
+    const user = this.mapUser(userRecord);
+    return this.issueTokens(user, context);
+  }
+
+  async refresh(payload: RefreshInput, request?: Request): Promise<Tokens> {
+    let decoded: JwtPayload;
+    try {
+      decoded = await this.jwtService.verifyAsync<JwtPayload>(payload.refreshToken, {
+        secret: this.getConfigString("JWT_REFRESH_SECRET"),
+      });
+    } catch (error) {
+      throw new UnauthorizedException("Refresh token invalid");
     }
 
     const record = await this.db.query.refreshTokens.findFirst({
-      where: eq(refreshTokens.id, decoded.tokenId),
+      where: and(eq(refreshTokens.userId, decoded.sub), eq(refreshTokens.jti, decoded.tokenId)),
     });
 
-    if (!record) {
-      throw new UnauthorizedException("Refresh token not found");
-    }
-
-    const matches = await verify(record.tokenHash, payload.refreshToken).catch(() => false);
-
-    if (!matches) {
-      await this.redisService.client.del(cacheKey);
-      await this.db.delete(refreshTokens).where(eq(refreshTokens.id, decoded.tokenId));
-      throw new UnauthorizedException("Refresh token invalid");
+    if (!record || record.revokedAt) {
+      throw new UnauthorizedException("Refresh token revoked");
     }
 
     const userRecord = await this.usersService.findById(decoded.sub);
@@ -165,27 +272,53 @@ export class AuthService {
       throw new UnauthorizedException("User not found");
     }
 
-    await Promise.all([
-      this.redisService.client.del(cacheKey),
-      this.db.delete(refreshTokens).where(eq(refreshTokens.id, decoded.tokenId)),
-    ]);
+    await this.markTokenRevoked(record.id);
 
     const user = this.mapUser(userRecord);
-    const newTokenId = nanoid();
-    const tokens = await this.buildTokens(user, newTokenId);
-    await this.persistRefreshToken(user, newTokenId, tokens.refreshToken);
-    return tokens;
+    const context = this.extractRequestContext(request);
+    return this.issueTokens(user, context);
   }
 
-  async logout(payload: RefreshInput) {
-    const decoded = await this.jwtService.verifyAsync<JwtPayload>(payload.refreshToken, {
-      secret: this.configService.get("JWT_REFRESH_SECRET", { infer: true }),
-    });
+  async logout(user: RequestUser, payload: LogoutInput) {
+    if (payload.all) {
+      await this.db
+        .update(refreshTokens)
+        .set({ revokedAt: new Date() })
+        .where(and(eq(refreshTokens.userId, user.id), isNull(refreshTokens.revokedAt)));
+      return { success: true };
+    }
 
-    await Promise.all([
-      this.redisService.client.del(this.refreshCacheKey(decoded.sub, decoded.tokenId)),
-      this.db.delete(refreshTokens).where(eq(refreshTokens.id, decoded.tokenId)),
-    ]);
+    let tokenId = payload.jti ?? null;
+
+    if (!tokenId && payload.refreshToken) {
+      try {
+        const decoded = await this.jwtService.verifyAsync<JwtPayload>(payload.refreshToken, {
+          secret: this.getConfigString("JWT_REFRESH_SECRET"),
+        });
+
+        if (decoded.sub !== user.id) {
+          throw new UnauthorizedException("Refresh token invalid");
+        }
+
+        tokenId = decoded.tokenId;
+      } catch (error) {
+        throw new UnauthorizedException("Refresh token invalid");
+      }
+    }
+
+    if (!tokenId) {
+      throw new BadRequestException("Missing token identifier");
+    }
+
+    const [updated] = await this.db
+      .update(refreshTokens)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(refreshTokens.userId, user.id), eq(refreshTokens.jti, tokenId)))
+      .returning();
+
+    if (!updated) {
+      throw new UnauthorizedException("Token not found");
+    }
 
     return { success: true };
   }
@@ -198,13 +331,15 @@ export class AuthService {
     return this.mapUser(user);
   }
 
-  async register(payload: RegisterUserInput) {
+  async register(payload: RegisterUserInput, request?: Request) {
     const existing = await this.usersService.findByEmail(payload.email);
     if (existing) {
       throw new UnauthorizedException("Email already registered");
     }
 
-    await this.usersService.create(payload);
-    return this.login({ email: payload.email, password: payload.password });
+    const created = await this.usersService.create(payload);
+    const user = this.mapUser(created);
+    const context = this.extractRequestContext(request);
+    return this.issueTokens(user, context);
   }
 }

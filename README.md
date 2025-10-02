@@ -50,25 +50,30 @@ Platform pengelolaan absensi dan nilai siswa berbasis NestJS + React Admin. Mono
 
 ### Root `.env`
 
-| Variabel               | Deskripsi                                           | Contoh                                      |
-| ---------------------- | --------------------------------------------------- | ------------------------------------------- |
-| `NODE_ENV`             | Mode runtime (`development` / `production`)         | `development`                               |
-| `TZ`                   | Zona waktu default                                  | `Asia/Jakarta`                              |
-| `PORT`                 | Port API saat dev                                   | `3000`                                      |
-| `DATABASE_URL`         | URL Postgres (Drizzle + API + worker)               | `postgres://sma:sma@localhost:5432/sma_dev` |
-| `REDIS_URL`            | URL Redis (BullMQ)                                  | `redis://default:password@localhost:6379`   |
-| `JWT_ACCESS_SECRET`    | Secret JWT access token                             | `super-secret-access`                       |
-| `JWT_REFRESH_SECRET`   | Secret JWT refresh token                            | `super-secret-refresh`                      |
-| `JWT_ACCESS_TTL`       | Masa berlaku access token (detik)                   | `900`                                       |
-| `JWT_REFRESH_TTL`      | Masa berlaku refresh token (detik)                  | `2592000`                                   |
-| `STORAGE_DRIVER`       | `supabase` atau `r2`                                | `supabase`                                  |
-| `SUPABASE_URL`         | URL project Supabase                                | `https://xyzcompany.supabase.co`            |
-| `SUPABASE_ANON_KEY`    | Public anon key                                     | `sb-anon-...`                               |
-| `SUPABASE_SERVICE_KEY` | Service role key untuk worker                       | `sb-service-...`                            |
-| `SUPABASE_BUCKET`      | Bucket penyimpanan                                  | `public-assets`                             |
-| `R2_*`                 | Kredensial Cloudflare R2 (jika `STORAGE_DRIVER=r2`) | `...`                                       |
-| `APP_BASE_URL`         | Origin aplikasi admin                               | `http://localhost:5173`                     |
-| `EMAIL_FROM`           | Email pengirim default                              | `no-reply@example.local`                    |
+| Variabel                  | Deskripsi                                            | Contoh                                       |
+| ------------------------- | ---------------------------------------------------- | -------------------------------------------- |
+| `NODE_ENV`                | Mode runtime (`development` / `production`)          | `development`                                |
+| `TZ`                      | Zona waktu default                                   | `Asia/Jakarta`                               |
+| `PORT`                    | Port API saat dev                                    | `3000`                                       |
+| `DATABASE_URL`            | URL Postgres (Drizzle + API + worker)                | `postgres://sma:sma@localhost:5432/sma_dev`  |
+| `REDIS_URL`               | URL Redis (BullMQ)                                   | `redis://default:password@localhost:6379`    |
+| `JWT_ACCESS_SECRET`       | Secret JWT access token                              | `super-secret-access`                        |
+| `JWT_REFRESH_SECRET`      | Secret JWT refresh token                             | `super-secret-refresh`                       |
+| `JWT_ACCESS_TTL`          | Masa berlaku access token (detik)                    | `900`                                        |
+| `JWT_REFRESH_TTL`         | Masa berlaku refresh token (detik)                   | `2592000`                                    |
+| `CORS_ALLOWED_ORIGINS`    | Daftar origin yang diizinkan (pisahkan dengan koma)  | `http://localhost:5173,https://admin.sch.id` |
+| `AUTH_MAX_LOGIN_ATTEMPTS` | Batas percobaan login per IP + email sebelum lockout | `5`                                          |
+| `AUTH_LOCKOUT_DURATION`   | Durasi lockout (detik) setelah melampaui batas       | `900`                                        |
+| `ARGON2_MEMORY_COST`      | Argon2 memory cost (KB)                              | `19456`                                      |
+| `ARGON2_TIME_COST`        | Argon2 time cost (iterasi)                           | `2`                                          |
+| `STORAGE_DRIVER`          | `supabase` atau `r2`                                 | `supabase`                                   |
+| `SUPABASE_URL`            | URL project Supabase                                 | `https://xyzcompany.supabase.co`             |
+| `SUPABASE_ANON_KEY`       | Public anon key                                      | `sb-anon-...`                                |
+| `SUPABASE_SERVICE_KEY`    | Service role key untuk worker                        | `sb-service-...`                             |
+| `SUPABASE_BUCKET`         | Bucket penyimpanan                                   | `public-assets`                              |
+| `R2_*`                    | Kredensial Cloudflare R2 (jika `STORAGE_DRIVER=r2`)  | `...`                                        |
+| `APP_BASE_URL`            | Origin aplikasi admin                                | `http://localhost:5173`                      |
+| `EMAIL_FROM`              | Email pengirim default                               | `no-reply@example.local`                     |
 
 > Worker membaca environment dari root `.env` melalui `tsx --env-file`, jadi pastikan kredensial DB & Redis tersedia.
 
@@ -76,18 +81,23 @@ Platform pengelolaan absensi dan nilai siswa berbasis NestJS + React Admin. Mono
 
 Gunakan saat build/deploy terpisah di platform seperti Railway.
 
-| Variabel              | Deskripsi                        | Contoh                                                 |
-| --------------------- | -------------------------------- | ------------------------------------------------------ |
-| `DATABASE_URL`        | URL Postgres produksi            | `postgres://user:pass@ep.example.aws.neon.tech/neondb` |
-| `REDIS_URL`           | URL Upstash Redis                | `rediss://default:pass@global.upstash.io:6379`         |
-| `JWT_ACCESS_SECRET`   | Secret produksi                  | `prod-access-secret`                                   |
-| `JWT_REFRESH_SECRET`  | Secret produksi                  | `prod-refresh-secret`                                  |
-| `JWT_ACCESS_TTL`      | TTL access token                 | `900`                                                  |
-| `JWT_REFRESH_TTL`     | TTL refresh token                | `2592000`                                              |
-| `STORAGE_DRIVER`      | `supabase` / `r2`                | `supabase`                                             |
-| `SUPABASE_*` / `R2_*` | Kredensial storage sesuai driver | —                                                      |
-| `APP_BASE_URL`        | URL deploy admin                 | `https://admin.example.sch.id`                         |
-| `EMAIL_FROM`          | Email notifikasi                 | `no-reply@example.sch.id`                              |
+| Variabel                  | Deskripsi                            | Contoh                                                 |
+| ------------------------- | ------------------------------------ | ------------------------------------------------------ |
+| `DATABASE_URL`            | URL Postgres produksi                | `postgres://user:pass@ep.example.aws.neon.tech/neondb` |
+| `REDIS_URL`               | URL Upstash Redis                    | `rediss://default:pass@global.upstash.io:6379`         |
+| `JWT_ACCESS_SECRET`       | Secret produksi                      | `prod-access-secret`                                   |
+| `JWT_REFRESH_SECRET`      | Secret produksi                      | `prod-refresh-secret`                                  |
+| `JWT_ACCESS_TTL`          | TTL access token                     | `900`                                                  |
+| `JWT_REFRESH_TTL`         | TTL refresh token                    | `2592000`                                              |
+| `CORS_ALLOWED_ORIGINS`    | Origin yang diizinkan untuk API      | `https://admin.example.sch.id`                         |
+| `AUTH_MAX_LOGIN_ATTEMPTS` | Batas percobaan login per IP + email | `5`                                                    |
+| `AUTH_LOCKOUT_DURATION`   | Durasi lockout (detik)               | `900`                                                  |
+| `ARGON2_MEMORY_COST`      | Argon2 memory cost (KB)              | `19456`                                                |
+| `ARGON2_TIME_COST`        | Argon2 time cost (iterasi)           | `2`                                                    |
+| `STORAGE_DRIVER`          | `supabase` / `r2`                    | `supabase`                                             |
+| `SUPABASE_*` / `R2_*`     | Kredensial storage sesuai driver     | —                                                      |
+| `APP_BASE_URL`            | URL deploy admin                     | `https://admin.example.sch.id`                         |
+| `EMAIL_FROM`              | Email notifikasi                     | `no-reply@example.sch.id`                              |
 
 ### `apps/worker/.env`
 
@@ -98,6 +108,15 @@ Worker juga membutuhkan `DATABASE_URL`, `REDIS_URL`, dan konfigurasi storage yan
 | Variabel       | Deskripsi                                | Contoh                         |
 | -------------- | ---------------------------------------- | ------------------------------ |
 | `VITE_API_URL` | Base URL API (termasuk prefix `/api/v1`) | `http://localhost:3000/api/v1` |
+
+### Catatan keamanan
+
+- **Rotasi refresh token** – setiap permintaan refresh menerbitkan token dengan JTI baru dan otomatis menandai token lama sebagai revoked lengkap dengan catatan IP serta User-Agent.
+- **Logout fleksibel** – endpoint `/auth/logout` dapat mencabut satu token (berdasarkan refresh token atau JTI) maupun seluruh sesi aktif pengguna.
+- **Rate limiting ketat** – `/auth/login`, `/auth/refresh`, dan `/storage/presign` diberi throttle khusus untuk mengecilkan peluang brute-force/presign abuse.
+- **Password policy kuat** – minimal 12 karakter dengan kombinasi huruf besar, huruf kecil, angka, dan simbol; admin default sudah mengikuti aturan ini.
+- **Lockout login** – percobaan gagal berulang (per IP + email) memicu lockout sementara sesuai `AUTH_MAX_LOGIN_ATTEMPTS` dan `AUTH_LOCKOUT_DURATION`.
+- **Argon2 parametrik** – `ARGON2_MEMORY_COST` dan `ARGON2_TIME_COST` bisa diatur agar hashing seimbang antara keamanan dan performa.
 
 ## Menjalankan secara lokal
 

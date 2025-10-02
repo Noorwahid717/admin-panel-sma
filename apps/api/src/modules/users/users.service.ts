@@ -1,25 +1,67 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { and, desc, eq, ilike, lt, sql } from "drizzle-orm";
-import { hash } from "argon2";
+import * as argon2 from "argon2";
 import type { CreateUserInput, UpdateUserInput, UserQuery } from "@shared/schemas";
 import { ROLES } from "@shared/constants";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
 import type { Database } from "../../db/client";
 import { users } from "../../db/schema";
 import { nanoid } from "nanoid";
+import type { EnvironmentVariables } from "../../config/env.validation";
 
 @Injectable()
 export class UsersService {
-  constructor(@Inject(DRIZZLE_CLIENT) private readonly db: Database) {}
+  constructor(
+    @Inject(DRIZZLE_CLIENT) private readonly db: Database,
+    @Inject(ConfigService) private readonly configService: ConfigService<EnvironmentVariables>
+  ) {}
 
-  async findByEmail(email: string) {
-    return this.db.query.users.findFirst({
-      where: eq(users.email, email.toLowerCase()),
+  private getConfigNumber(key: keyof EnvironmentVariables, fallback: number) {
+    const value = this.configService?.get(key, { infer: true });
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+
+    const fromEnv = process.env[key as string];
+    const parsed = fromEnv ? Number(fromEnv) : NaN;
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  private get argonMemoryCost() {
+    return this.getConfigNumber("ARGON2_MEMORY_COST", 19456);
+  }
+
+  private get argonTimeCost() {
+    return this.getConfigNumber("ARGON2_TIME_COST", 2);
+  }
+
+  private async hashPassword(plain: string) {
+    return argon2.hash(plain, {
+      type: argon2.argon2id,
+      memoryCost: this.argonMemoryCost,
+      timeCost: this.argonTimeCost,
     });
   }
 
+  async findByEmail(email: string) {
+    const result = await this.db.query.users.findFirst({
+      where: eq(users.email, email.toLowerCase()),
+    });
+    if (process.env.NODE_ENV === "test") {
+      // eslint-disable-next-line no-console
+      console.error("findByEmail result", result);
+    }
+    return result;
+  }
+
   async findById(id: string) {
-    return this.db.query.users.findFirst({ where: eq(users.id, id) });
+    const result = await this.db.query.users.findFirst({ where: eq(users.id, id) });
+    if (process.env.NODE_ENV === "test") {
+      // eslint-disable-next-line no-console
+      console.error("findById result", result);
+    }
+    return result;
   }
 
   async list(query: UserQuery) {
@@ -70,7 +112,7 @@ export class UsersService {
       throw new Error("Invalid role");
     }
 
-    const passwordHash = await hash(payload.password);
+    const passwordHash = await this.hashPassword(payload.password);
     const id = nanoid();
 
     const [created] = await this.db
@@ -143,7 +185,7 @@ export class UsersService {
       return;
     }
 
-    const passwordHash = await hash("Admin123!");
+    const passwordHash = await this.hashPassword("SmaAdmin123!@#");
 
     await this.db.insert(users).values({
       id: nanoid(),

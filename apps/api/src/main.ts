@@ -19,7 +19,18 @@ async function bootstrap() {
   app.use(cookieParser());
 
   const appBaseUrl = configService.get("APP_BASE_URL", { infer: true });
-  const corsOrigins = appBaseUrl ? [appBaseUrl] : [/\.example\.sch\.id$/];
+  const allowedOriginsRaw = configService.get("CORS_ALLOWED_ORIGINS", { infer: true }) ?? "";
+  const parsedOrigins = allowedOriginsRaw
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+
+  if (appBaseUrl) {
+    parsedOrigins.push(appBaseUrl);
+  }
+
+  const corsOrigins =
+    parsedOrigins.length > 0 ? Array.from(new Set(parsedOrigins)) : ["http://localhost:5173"];
 
   app.enableCors({
     origin: corsOrigins,

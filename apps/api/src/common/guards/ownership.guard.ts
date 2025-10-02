@@ -12,10 +12,13 @@ export class OwnershipGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const metadata = this.reflector.getAllAndOverride<OwnershipMetadata | undefined>(
-      OWNERSHIP_KEY,
-      [context.getHandler(), context.getClass()]
-    );
+    const metadata =
+      this.reflector?.getAllAndOverride?.<OwnershipMetadata | undefined>(OWNERSHIP_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ??
+      (Reflect.getMetadata(OWNERSHIP_KEY, context.getHandler()) as OwnershipMetadata | undefined) ??
+      (Reflect.getMetadata(OWNERSHIP_KEY, context.getClass()) as OwnershipMetadata | undefined);
 
     if (!metadata) {
       return true;

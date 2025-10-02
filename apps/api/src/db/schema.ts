@@ -1,4 +1,13 @@
-import { pgTable, text, timestamp, integer, boolean, real, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  integer,
+  boolean,
+  real,
+  uniqueIndex,
+  index,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const roles = [
@@ -186,13 +195,22 @@ export const reportJobs = pgTable(
   })
 );
 
-export const refreshTokens = pgTable("refresh_tokens", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull(),
-  tokenHash: text("token_hash").notNull(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+export const refreshTokens = pgTable(
+  "refresh_tokens",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    jti: text("jti").notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    userAgent: text("user_agent"),
+    ipAddress: text("ip_address"),
+  },
+  (table) => ({
+    jtiIdx: uniqueIndex("unq_refresh_tokens_jti").on(table.jti),
+    userIdx: index("idx_refresh_tokens_user").on(table.userId),
+  })
+);
 
 export const userRelations = relations(users, ({ one, many }) => ({
   teacher: one(teachers, {

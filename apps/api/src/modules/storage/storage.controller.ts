@@ -1,4 +1,5 @@
-import { Body, Controller, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Inject, Post, UseGuards } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
@@ -12,9 +13,10 @@ import type { RequestUser } from "@api/auth/auth.types";
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles("SUPERADMIN", "ADMIN", "OPERATOR", "TEACHER", "HOMEROOM")
 export class StorageController {
-  constructor(private readonly storageService: StorageService) {}
+  constructor(@Inject(StorageService) private readonly storageService: StorageService) {}
 
   @Post("presign")
+  @Throttle(20, 60)
   async presign(
     @CurrentUser() user: RequestUser,
     @Body(new ZodValidationPipe(storagePresignSchema)) payload: StoragePresignInput
