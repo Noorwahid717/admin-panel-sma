@@ -15,7 +15,8 @@
     "test:e2e": "vitest --run -c vitest.e2e.config.ts",
     "migrate:generate": "drizzle-kit generate",
     "migrate:push": "drizzle-kit push",
-    "seed": "ts-node --transpile-only src/db/seed.ts"
+    "seed": "ts-node src/db/seed.ts",
+    "db:reset": "drizzle-kit push --force && ts-node src/db/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.896.0",
