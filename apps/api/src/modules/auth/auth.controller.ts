@@ -34,14 +34,24 @@ export class AuthController {
   constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   @Public()
-  @Throttle(5, 60)
+  @Throttle({
+    default: {
+      limit: 5,
+      ttl: 60_000,
+    },
+  })
   @Post("login")
   login(@Req() request: Request, @Body(new ZodValidationPipe(loginSchema)) payload: LoginInput) {
     return this.authService.login(payload, request);
   }
 
   @Public()
-  @Throttle(5, 60)
+  @Throttle({
+    default: {
+      limit: 5,
+      ttl: 60_000,
+    },
+  })
   @Post("refresh")
   refresh(
     @Req() request: Request,

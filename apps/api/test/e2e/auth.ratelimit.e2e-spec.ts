@@ -36,9 +36,6 @@ describe("Auth and storage rate limiting", () => {
       .post("/api/v1/auth/login")
       .send({ email: "ratelimit-login@example.com", password });
 
-    // eslint-disable-next-line no-console
-    console.log("login sixth headers", sixth.headers);
-
     expect(sixth.status).toBe(429);
     expect(sixth.body.message).toMatch(/Too Many Requests/i);
   });
@@ -65,9 +62,6 @@ describe("Auth and storage rate limiting", () => {
     }
 
     const limited = await ctx.request.post("/api/v1/auth/refresh").send({ refreshToken });
-
-    // eslint-disable-next-line no-console
-    console.log("refresh sixth headers", limited.headers);
 
     expect(limited.status).toBe(429);
     expect(limited.body.message).toMatch(/Too Many Requests/i);
@@ -101,9 +95,6 @@ describe("Auth and storage rate limiting", () => {
       .post("/api/v1/storage/presign")
       .set("Authorization", `Bearer ${accessToken}`)
       .send({ fileName: "limited.png", contentType: "image/png" });
-
-    // eslint-disable-next-line no-console
-    console.log("storage twenty-first headers", limited.headers);
 
     expect(limited.status).toBe(429);
     expect(limited.body.message).toMatch(/Too Many Requests/i);

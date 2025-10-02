@@ -34,40 +34,11 @@ describe("Auth refresh rotation", () => {
       role: "SUPERADMIN",
     });
 
-    if (!user.email) {
-      // eslint-disable-next-line no-console
-      console.error("Created user missing email", {
-        keys: Object.keys(user ?? {}),
-        raw: JSON.stringify(user, null, 2),
-      });
-    }
-
-    const stored = await ctx.db.query.users.findFirst({ where: eq(users.email, email) });
-    if (!stored) {
-      // eslint-disable-next-line no-console
-      console.error("Stored user not found by email", email);
-    } else if (!stored.email) {
-      // eslint-disable-next-line no-console
-      console.error("Stored user missing email", stored);
-    }
-
-    const raw = await ctx.pool.query("SELECT * FROM users");
-    // eslint-disable-next-line no-console
-    console.error("Raw users rows", raw.rows);
-
     const loginResponse = await ctx.request
       .post("/api/v1/auth/login")
       .set("X-Forwarded-For", "203.0.113.5")
       .set("User-Agent", "VitestLogin/1.0")
       .send({ email, password });
-
-    if (loginResponse.status !== 201) {
-      // eslint-disable-next-line no-console
-      console.error("/auth/login failed", {
-        status: loginResponse.status,
-        body: JSON.stringify(loginResponse.body, null, 2),
-      });
-    }
 
     expect(loginResponse.status).toBe(201);
 
@@ -79,14 +50,6 @@ describe("Auth refresh rotation", () => {
       .set("X-Forwarded-For", "198.51.100.10")
       .set("User-Agent", "VitestRefresh/1.0")
       .send({ refreshToken: firstRefreshToken });
-
-    if (refreshResponse.status !== 201) {
-      // eslint-disable-next-line no-console
-      console.error("/auth/refresh failed", {
-        status: refreshResponse.status,
-        body: JSON.stringify(refreshResponse.body, null, 2),
-      });
-    }
 
     expect(refreshResponse.status).toBe(201);
 

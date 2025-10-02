@@ -16,7 +16,12 @@ export class StorageController {
   constructor(@Inject(StorageService) private readonly storageService: StorageService) {}
 
   @Post("presign")
-  @Throttle(20, 60)
+  @Throttle({
+    default: {
+      limit: 20,
+      ttl: 60_000,
+    },
+  })
   async presign(
     @CurrentUser() user: RequestUser,
     @Body(new ZodValidationPipe(storagePresignSchema)) payload: StoragePresignInput
