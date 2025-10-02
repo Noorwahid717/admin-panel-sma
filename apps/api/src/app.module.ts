@@ -36,7 +36,7 @@ import { OwnershipGuard } from "./common/guards/ownership.guard";
     ThrottlerModule.forRoot({
       throttlers: [
         {
-          ttl: 60,
+          ttl: 60_000,
           limit: 100,
         },
       ],

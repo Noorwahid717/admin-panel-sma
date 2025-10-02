@@ -9,8 +9,7 @@ import helmet from "helmet";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import { createDbClient, type Database } from "../../src/db/client";
-import { AuthController } from "../../src/modules/auth/auth.controller";
-import { StorageController } from "../../src/modules/storage/storage.controller";
+import { ThrottlerStorage, ThrottlerStorageService } from "@nestjs/throttler";
 import { DRIZZLE_CLIENT } from "../../src/infrastructure/database/database.constants";
 import { RedisService } from "../../src/infrastructure/redis/redis.service";
 import { REDIS_CLIENT } from "../../src/infrastructure/redis/redis.constants";
@@ -31,6 +30,7 @@ export interface E2EAppContext {
   redis: InMemoryRedisClient;
   usersService: UsersService;
   authService: AuthService;
+  throttlerStorage: ThrottlerStorageService;
   request: SuperTest<SuperTestRequest>;
   restoreEnv: () => void;
 }
@@ -314,10 +314,6 @@ export async function setupE2EApp(
         derivedFieldNames ??= Object.keys(record);
 
         const arrayRow = derivedFieldNames.map((field) => record[field]);
-        if (process.env.NODE_ENV === "test" && index === 0) {
-          // eslint-disable-next-line no-console
-          console.error("Adapted rowMode result", { fields: derivedFieldNames, record, arrayRow });
-        }
         return arrayRow;
       }
 
@@ -410,20 +406,25 @@ export async function setupE2EApp(
     typeof allowedOriginsValue === "string"
       ? allowedOriginsValue
       : String(allowedOriginsValue ?? "");
-  const parsedOrigins = allowedOriginsRaw
-    .split(",")
-    .map((origin: string) => origin.trim())
-    .filter((origin: string) => origin.length > 0);
 
-  if (appBaseUrl) {
-    parsedOrigins.push(String(appBaseUrl));
+  const corsOrigins = Array.from(
+    new Set(
+      [
+        ...allowedOriginsRaw
+          .split(",")
+          .map((origin: string) => origin.trim())
+          .filter((origin: string) => origin.length > 0),
+        appBaseUrl,
+      ].filter((origin): origin is string => Boolean(origin))
+    )
+  );
+
+  if (corsOrigins.length === 0) {
+    throw new Error("No CORS origins configured for tests");
   }
 
-  const corsOrigins: string[] =
-    parsedOrigins.length > 0 ? Array.from(new Set(parsedOrigins)) : ["http://localhost:5173"];
-
   app.enableCors({
-    origin: corsOrigins,
+    origin: corsOrigins as string[],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Authorization", "Content-Type", "Accept", "X-Requested-With", "X-CSRF-Token"],
@@ -431,27 +432,9 @@ export async function setupE2EApp(
 
   await app.init();
 
-  const authController = app.get(AuthController);
-  const storageController = app.get(StorageController);
-
-  // eslint-disable-next-line no-console
-  console.log("Throttle metadata", {
-    login: {
-      limit: Reflect.getMetadata("THROTTLER_LIMITdefault", authController.login),
-      ttl: Reflect.getMetadata("THROTTLER_TTLdefault", authController.login),
-    },
-    refresh: {
-      limit: Reflect.getMetadata("THROTTLER_LIMITdefault", authController.refresh),
-      ttl: Reflect.getMetadata("THROTTLER_TTLdefault", authController.refresh),
-    },
-    storage: {
-      limit: Reflect.getMetadata("THROTTLER_LIMITdefault", storageController.presign),
-      ttl: Reflect.getMetadata("THROTTLER_TTLdefault", storageController.presign),
-    },
-  });
-
   const usersService = app.get(UsersService);
   const authService = app.get(AuthService);
+  const throttlerStorage = app.get(ThrottlerStorage) as ThrottlerStorageService;
   const httpServer = app.getHttpServer();
 
   const restoreEnv = () => {
@@ -471,6 +454,7 @@ export async function setupE2EApp(
     redis: redisClient,
     usersService,
     authService,
+    throttlerStorage,
     request: request(httpServer) as unknown as SuperTest<SuperTestRequest>,
     restoreEnv,
   };
@@ -489,6 +473,20 @@ export async function resetAuthState(ctx: E2EAppContext) {
   ctx.redis.clear();
   await ctx.pool.query("TRUNCATE TABLE refresh_tokens RESTART IDENTITY CASCADE");
   await ctx.pool.query("TRUNCATE TABLE users RESTART IDENTITY CASCADE");
+  resetThrottlerState(ctx);
+}
+
+export function resetThrottlerState(ctx: Pick<E2EAppContext, "throttlerStorage">) {
+  ctx.throttlerStorage.storage.clear();
+  const internal = ctx.throttlerStorage as unknown as {
+    timeoutIds?: Map<string, NodeJS.Timeout[]>;
+  };
+  internal.timeoutIds?.forEach((timeouts) => {
+    for (const timer of timeouts) {
+      clearTimeout(timer);
+    }
+  });
+  internal.timeoutIds?.clear?.();
 }
 
 export function decodeJwt(token: string) {

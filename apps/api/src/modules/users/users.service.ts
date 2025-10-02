@@ -45,23 +45,13 @@ export class UsersService {
   }
 
   async findByEmail(email: string) {
-    const result = await this.db.query.users.findFirst({
+    return this.db.query.users.findFirst({
       where: eq(users.email, email.toLowerCase()),
     });
-    if (process.env.NODE_ENV === "test") {
-      // eslint-disable-next-line no-console
-      console.error("findByEmail result", result);
-    }
-    return result;
   }
 
   async findById(id: string) {
-    const result = await this.db.query.users.findFirst({ where: eq(users.id, id) });
-    if (process.env.NODE_ENV === "test") {
-      // eslint-disable-next-line no-console
-      console.error("findById result", result);
-    }
-    return result;
+    return this.db.query.users.findFirst({ where: eq(users.id, id) });
   }
 
   async list(query: UserQuery) {

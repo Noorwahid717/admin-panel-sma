@@ -19,18 +19,27 @@ async function bootstrap() {
   app.use(cookieParser());
 
   const appBaseUrl = configService.get("APP_BASE_URL", { infer: true });
-  const allowedOriginsRaw = configService.get("CORS_ALLOWED_ORIGINS", { infer: true }) ?? "";
-  const parsedOrigins = allowedOriginsRaw
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
+  const allowedOriginsValue = configService.get("CORS_ALLOWED_ORIGINS", { infer: true });
+  const allowedOriginsRaw =
+    typeof allowedOriginsValue === "string"
+      ? allowedOriginsValue
+      : String(allowedOriginsValue ?? "");
 
-  if (appBaseUrl) {
-    parsedOrigins.push(appBaseUrl);
+  const corsOrigins = Array.from(
+    new Set(
+      [
+        ...allowedOriginsRaw
+          .split(",")
+          .map((origin) => origin.trim())
+          .filter((origin) => origin.length > 0),
+        appBaseUrl,
+      ].filter((origin): origin is string => Boolean(origin))
+    )
+  );
+
+  if (corsOrigins.length === 0) {
+    throw new Error("No CORS origins configured");
   }
-
-  const corsOrigins =
-    parsedOrigins.length > 0 ? Array.from(new Set(parsedOrigins)) : ["http://localhost:5173"];
 
   app.enableCors({
     origin: corsOrigins,

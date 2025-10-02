@@ -1,5 +1,11 @@
 import { beforeAll, afterAll, beforeEach, describe, expect, it } from "vitest";
-import { setupE2EApp, teardownE2EApp, resetAuthState, type E2EAppContext } from "./setup";
+import {
+  setupE2EApp,
+  teardownE2EApp,
+  resetAuthState,
+  resetThrottlerState,
+  type E2EAppContext,
+} from "./setup";
 
 const SUPERADMIN_EMAIL = "policy-admin@example.com";
 const SUPERADMIN_PASSWORD = "AdminPolicy123!@";
@@ -80,6 +86,8 @@ describe("Password policy and lockout", () => {
         .send({ email: "lockout@example.com", password: "WrongPass1!" })
         .expect(401);
     }
+
+    resetThrottlerState(ctx);
 
     const locked = await ctx.request
       .post("/api/v1/auth/login")
