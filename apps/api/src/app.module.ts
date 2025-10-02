@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { validateEnvironment } from "./config/env.validation";
 import { DatabaseModule } from "./infrastructure/database/database.module";
@@ -21,9 +21,11 @@ import { GradesModule } from "./modules/grades/grades.module";
 import { AttendanceModule } from "./modules/attendance/attendance.module";
 import { ReportsModule } from "./modules/reports/reports.module";
 import { StorageModule } from "./modules/storage/storage.module";
+import { HealthModule } from "./modules/health/health.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { OwnershipGuard } from "./common/guards/ownership.guard";
+import { RequestLoggingInterceptor } from "./common/interceptors/request-logging.interceptor";
 
 @Module({
   imports: [
@@ -59,12 +61,14 @@ import { OwnershipGuard } from "./common/guards/ownership.guard";
     AttendanceModule,
     ReportsModule,
     StorageModule,
+    HealthModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: OwnershipGuard },
+    { provide: APP_INTERCEPTOR, useClass: RequestLoggingInterceptor },
   ],
 })
 export class AppModule {}
