@@ -304,7 +304,7 @@ export async function setupE2EApp(
     let derivedFieldNames =
       result.fields!.length > 0 ? result.fields!.map((field) => field.name) : undefined;
 
-    const rowsAsArrays = result.rows.map((row, index) => {
+    const rowsAsArrays = result.rows.map((row) => {
       if (Array.isArray(row)) {
         return row;
       }
@@ -322,12 +322,10 @@ export async function setupE2EApp(
 
     const nextFields = derivedFieldNames?.map((name) => ({ name }));
 
-    const nextResult = Object.assign(Object.create(Object.getPrototypeOf(result)), result, {
+    return Object.assign(Object.create(Object.getPrototypeOf(result)), result, {
       rows: rowsAsArrays,
       ...(nextFields ? { fields: nextFields } : {}),
     });
-
-    return nextResult;
   };
 
   const originalPoolQuery = pool.query.bind(pool);

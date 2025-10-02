@@ -255,7 +255,7 @@ export class AuthService {
       decoded = await this.jwtService.verifyAsync<JwtPayload>(payload.refreshToken, {
         secret: this.getConfigString("JWT_REFRESH_SECRET"),
       });
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException("Refresh token invalid");
     }
 
@@ -301,7 +301,7 @@ export class AuthService {
         }
 
         tokenId = decoded.tokenId;
-      } catch (error) {
+      } catch {
         throw new UnauthorizedException("Refresh token invalid");
       }
     }

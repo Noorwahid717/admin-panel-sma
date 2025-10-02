@@ -33,10 +33,7 @@ describe("Auth logout behaviour", () => {
       role: "SUPERADMIN",
     });
 
-    const firstLogin = await ctx.request
-      .post("/api/v1/auth/login")
-      .send({ email: user.email, password })
-      .expect(201);
+    await ctx.request.post("/api/v1/auth/login").send({ email: user.email, password }).expect(201);
 
     const secondLogin = await ctx.request
       .post("/api/v1/auth/login")

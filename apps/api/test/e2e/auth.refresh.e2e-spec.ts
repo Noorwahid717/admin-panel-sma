@@ -1,6 +1,6 @@
 import { beforeAll, afterAll, beforeEach, describe, expect, it } from "vitest";
 import { eq, desc } from "drizzle-orm";
-import { refreshTokens, users } from "../../src/db/schema";
+import { refreshTokens } from "../../src/db/schema";
 import {
   setupE2EApp,
   teardownE2EApp,
