@@ -15,12 +15,28 @@ import type { EnvironmentVariables } from "../../config/env.validation";
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
-        secret: configService.get("JWT_ACCESS_SECRET", { infer: true }),
-        signOptions: {
-          expiresIn: configService.get("JWT_ACCESS_TTL", { infer: true }) ?? 900,
-        },
-      }),
+      useFactory: (configService: ConfigService<EnvironmentVariables>) => {
+        const secret =
+          configService?.get("JWT_ACCESS_SECRET", { infer: true }) ??
+          process.env.JWT_ACCESS_SECRET ??
+          "";
+        const configTtl = configService?.get("JWT_ACCESS_TTL", { infer: true });
+        const envTtlRaw = process.env.JWT_ACCESS_TTL;
+        const envTtl = envTtlRaw ? Number(envTtlRaw) : NaN;
+        const ttl =
+          typeof configTtl === "number" && Number.isFinite(configTtl)
+            ? configTtl
+            : Number.isFinite(envTtl)
+              ? envTtl
+              : 900;
+
+        return {
+          secret,
+          signOptions: {
+            expiresIn: ttl,
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

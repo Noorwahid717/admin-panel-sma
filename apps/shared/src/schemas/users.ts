@@ -1,9 +1,19 @@
 import { z } from "zod";
-import { ROLES } from "../constants";
+import {
+  ROLES,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_COMPLEXITY_REGEX,
+  PASSWORD_COMPLEXITY_MESSAGE,
+} from "../constants";
+
+const passwordPolicy = z
+  .string()
+  .min(PASSWORD_MIN_LENGTH)
+  .regex(PASSWORD_COMPLEXITY_REGEX, PASSWORD_COMPLEXITY_MESSAGE);
 
 export const createUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: passwordPolicy,
   fullName: z.string().min(3),
   role: z.enum(ROLES),
   teacherId: z.string().optional(),

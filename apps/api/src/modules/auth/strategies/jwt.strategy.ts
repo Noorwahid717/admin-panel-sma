@@ -8,10 +8,13 @@ import type { AuthenticatedUser, JwtPayload } from "@api/auth/auth.types";
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly configService: ConfigService<EnvironmentVariables>) {
+    const secret =
+      configService?.get("JWT_ACCESS_SECRET", { infer: true }) ?? process.env.JWT_ACCESS_SECRET;
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get("JWT_ACCESS_SECRET", { infer: true }),
+      secretOrKey: secret,
     });
   }
 
