@@ -91,73 +91,57 @@ const resolveHeaders = (meta?: Record<string, unknown>) =>
 const resolveSignal = (meta?: Record<string, unknown>) =>
   (meta?.signal as AbortSignal | undefined) ?? undefined;
 
-const rawProvider = {
-  getList: async (paramsRaw: Record<string, any>) => {
-    const { resource, pagination, filters, sorters, meta } = paramsRaw as {
-      resource: string;
-      pagination?: { current?: number; pageSize?: number };
-      filters?: CrudFilters;
-      sorters?: CrudSorting;
-      meta?: Record<string, unknown>;
-    };
+const ensureParams = (
+  params: Parameters<DataProvider["getList"]>[0]
+): {
+  resource: string;
+  pagination?: { current?: number; pageSize?: number };
+  filters?: CrudFilters;
+  sorters?: CrudSorting;
+  meta?: Record<string, unknown>;
+} => ({
+  resource: params.resource,
+  pagination: params.pagination,
+  filters: params.filters,
+  sorters: params.sorters,
+  meta: params.meta,
+});
 
-    const params: Record<string, unknown> = {
+const dataProvider: DataProvider = {
+  getList: async (params) => {
+    const { resource, pagination, filters, sorters, meta } = ensureParams(params);
+
+    const queryParams: Record<string, unknown> = {
       ...transformFilters(resource, filters as CrudFilters | undefined),
     };
 
     if (pagination) {
-      params.page = pagination.current ?? 1;
-      params.limit = pagination.pageSize ?? 10;
+      queryParams.page = pagination.current ?? 1;
+      queryParams.limit = pagination.pageSize ?? 10;
     }
 
     const sort = buildSorting(sorters as CrudSorting | undefined);
     if (sort) {
-      params.sort = sort;
+      queryParams.sort = sort;
     }
 
     const response = await api.get(`/${resource}`, {
-      params,
+      params: queryParams,
       headers: resolveHeaders(meta),
       signal: resolveSignal(meta),
     });
 
-    return extractListPayload<BaseRecord>(response) as unknown as GetListResponse<any>;
+    return extractListPayload(response);
   },
 
   getApiUrl: () => api.defaults.baseURL ?? "",
 
-  getOne: async () => {
-    throw new Error("getOne is not implemented yet");
-  },
-  create: async () => {
-    throw new Error("create is not implemented yet");
-  },
-  update: async () => {
-    throw new Error("update is not implemented yet");
-  },
-  deleteOne: async () => {
-    throw new Error("deleteOne is not implemented yet");
-  },
-  getMany: async () => {
-    throw new Error("getMany is not implemented yet");
-  },
-  getManyReference: async () => {
-    throw new Error("getManyReference is not implemented yet");
-  },
-  createMany: async () => {
-    throw new Error("createMany is not implemented yet");
-  },
-  deleteMany: async () => {
-    throw new Error("deleteMany is not implemented yet");
-  },
-  updateMany: async () => {
-    throw new Error("updateMany is not implemented yet");
-  },
-  custom: async () => {
-    throw new Error("custom requests are not implemented yet");
-  },
+  getOne: async () => Promise.reject(new Error("getOne is not implemented yet")),
+  create: async () => Promise.reject(new Error("create is not implemented yet")),
+  update: async () => Promise.reject(new Error("update is not implemented yet")),
+  deleteOne: async () => Promise.reject(new Error("deleteOne is not implemented yet")),
+  getMany: async () => Promise.reject(new Error("getMany is not implemented yet")),
+  custom: async () => Promise.reject(new Error("custom requests are not implemented yet")),
 };
 
-export const dataProvider = rawProvider as unknown as DataProvider;
-
-export { api };
+export { api, dataProvider };
