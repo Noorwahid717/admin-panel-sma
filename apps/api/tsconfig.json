@@ -1,14 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "./",
+    "baseUrl": "../../",
     "outDir": "./dist",
-    "rootDir": "./src",
     "incremental": true,
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "paths": {
-      "@shared/*": ["../shared/dist/*"],
-      "@api/*": ["./src/*"]
+      "@shared/*": ["apps/shared/src/*"],
+      "@api/*": ["apps/api/src/*"]
     }
   },
   "include": ["src/**/*"],
