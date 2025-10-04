@@ -1,5 +1,5 @@
 import { asc, eq } from "drizzle-orm";
-import type { Database } from "@api/db/client";
+import type { Database } from "@shared/db/client";
 import {
   classes,
   enrollments,
@@ -9,7 +9,7 @@ import {
   students,
   subjects,
   terms,
-} from "@api/db/schema";
+} from "@shared/db/schema";
 import type { ReportPdfPayload, ReportSubjectComponent, ReportSubjectSummary } from "./pdf";
 
 export async function loadReportContext(db: Database, jobId: string) {

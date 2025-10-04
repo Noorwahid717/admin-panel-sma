@@ -5,8 +5,8 @@ import * as argon2 from "argon2";
 import type { CreateUserInput, UpdateUserInput, UserQuery } from "@shared/schemas";
 import { ROLES } from "@shared/constants";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
-import { users } from "../../db/schema";
+import type { Database } from "@shared/db/client";
+import { users } from "@shared/db/schema";
 import { nanoid } from "nanoid";
 import type { EnvironmentVariables } from "../../config/env.validation";
 

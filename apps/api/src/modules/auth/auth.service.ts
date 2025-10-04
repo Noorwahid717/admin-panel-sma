@@ -8,8 +8,8 @@ import type { LoginInput, LogoutInput, RefreshInput, RegisterUserInput } from "@
 import { UsersService } from "../users/users.service";
 import { RedisService } from "../../infrastructure/redis/redis.service";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
-import { refreshTokens, users } from "../../db/schema";
+import type { Database } from "@shared/db/client";
+import { refreshTokens, users } from "@shared/db/schema";
 import type { EnvironmentVariables } from "../../config/env.validation";
 import type {
   AppRole,

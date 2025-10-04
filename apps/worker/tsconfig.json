@@ -1,9 +1,17 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
     "outDir": "dist",
     "incremental": true,
-    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
+    "baseUrl": "../../",
+    "paths": {
+      "@shared/*": ["apps/shared/src/*"],
+      "@api/*": ["apps/api/src/*"],
+      "@worker/*": ["apps/worker/src/*"]
+    }
   },
   "include": ["src/**/*"]
 }

@@ -6,8 +6,8 @@ import type {
   UpdateGradeComponentInput,
 } from "@shared/schemas";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
-import { gradeComponents } from "../../db/schema";
+import type { Database } from "@shared/db/client";
+import { gradeComponents } from "@shared/db/schema";
 import { nanoid } from "nanoid";
 
 @Injectable()

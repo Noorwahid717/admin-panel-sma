@@ -7,8 +7,8 @@ import type {
   UpdateStudentInput,
 } from "@shared/schemas";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
-import { students, enrollments } from "../../db/schema";
+import type { Database } from "@shared/db/client";
+import { students, enrollments } from "@shared/db/schema";
 import { nanoid } from "nanoid";
 
 @Injectable()

@@ -1,11 +1,16 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "../../",
-    "outDir": "dist",
+    "baseUrl": "./",
+    "outDir": "./dist",
+    "rootDir": "./src",
     "incremental": true,
-    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
+    "paths": {
+      "@shared/*": ["../shared/dist/*"],
+      "@api/*": ["./src/*"]
+    }
   },
-  "include": ["src/**/*", "test/**/*", "drizzle.config.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "drizzle.config.ts"]
 }

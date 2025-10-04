@@ -2,8 +2,8 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, desc, eq, ilike, lt } from "drizzle-orm";
 import type { CreateSubjectInput, SubjectQuery, UpdateSubjectInput } from "@shared/schemas";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
-import { subjects } from "../../db/schema";
+import type { Database } from "@shared/db/client";
+import { subjects } from "@shared/db/schema";
 import { nanoid } from "nanoid";
 
 @Injectable()

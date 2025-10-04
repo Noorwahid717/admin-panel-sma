@@ -6,8 +6,8 @@ import type {
   CreateAttendanceRecordInput,
 } from "@shared/schemas";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
-import { attendance, classes, enrollments, students, subjects, terms } from "../../db/schema";
+import type { Database } from "@shared/db/client";
+import { attendance, classes, enrollments, students, subjects, terms } from "@shared/db/schema";
 import { nanoid } from "nanoid";
 import type { RequestUser } from "@api/auth/auth.types";
 import { OwnershipService } from "../../common/services/ownership.service";

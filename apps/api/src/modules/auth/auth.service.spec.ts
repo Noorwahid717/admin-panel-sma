@@ -2,14 +2,14 @@ import { UnauthorizedException } from "@nestjs/common";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { Request } from "express";
 import { AuthService } from "./auth.service";
-import { refreshTokens, users } from "../../db/schema";
+import { refreshTokens, users } from "@shared/db/schema";
 import type { Tokens, AuthenticatedUser } from "@api/auth/auth.types";
 import type { EnvironmentVariables } from "../../config/env.validation";
 import type { ConfigService } from "@nestjs/config";
 import type { JwtService } from "@nestjs/jwt";
 import type { UsersService } from "../users/users.service";
 import type { RedisService } from "../../infrastructure/redis/redis.service";
-import type { Database } from "../../db/client";
+import type { Database } from "@shared/db/client";
 
 type ExposedAuthService = {
   getConfigNumber: (key: keyof EnvironmentVariables, fallback: number) => number;

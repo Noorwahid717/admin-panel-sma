@@ -4,6 +4,33 @@
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./db/schema": {
+      "types": "./dist/db/schema.d.ts",
+      "import": "./dist/db/schema.js",
+      "require": "./dist/db/schema.js"
+    },
+    "./db/client": {
+      "types": "./dist/db/client.d.ts",
+      "import": "./dist/db/client.js",
+      "require": "./dist/db/client.js"
+    },
+    "./schemas": {
+      "types": "./dist/schemas/index.d.ts",
+      "import": "./dist/schemas/index.js",
+      "require": "./dist/schemas/index.js"
+    },
+    "./constants": {
+      "types": "./dist/constants/index.d.ts",
+      "import": "./dist/constants/index.js",
+      "require": "./dist/constants/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint \"src\"",
@@ -12,9 +39,12 @@
     "format": "prettier --write src"
   },
   "dependencies": {
+    "drizzle-orm": "0.44.5",
+    "pg": "8.11.5",
     "zod": "3.23.8"
   },
   "devDependencies": {
+    "@types/pg": "8.15.5",
     "tslib": "2.6.3",
     "vitest": "1.6.0"
   }

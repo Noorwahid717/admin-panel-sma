@@ -6,8 +6,8 @@ import type {
   UpdateScheduleEntryInput,
 } from "@shared/schemas";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
-import { classes, scheduleEntries, subjects, teachers } from "../../db/schema";
+import type { Database } from "@shared/db/client";
+import { classes, scheduleEntries, subjects, teachers } from "@shared/db/schema";
 import { nanoid } from "nanoid";
 
 @Injectable()

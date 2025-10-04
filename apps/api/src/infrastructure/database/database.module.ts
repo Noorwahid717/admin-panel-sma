@@ -2,7 +2,7 @@ import { Global, Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Pool } from "pg";
 import { DRIZZLE_CLIENT } from "./database.constants";
-import { createDatabasePool, createDbClient } from "../../db/client";
+import { createDatabasePool, createDbClient } from "@shared/db/client";
 import type { EnvironmentVariables } from "../../config/env.validation";
 
 @Global()

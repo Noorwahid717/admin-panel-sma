@@ -293,10 +293,19 @@ importers:
 
   apps/shared:
     dependencies:
+      drizzle-orm:
+        specifier: 0.44.5
+        version: 0.44.5(@types/pg@8.15.5)(pg@8.11.5)
+      pg:
+        specifier: 8.11.5
+        version: 8.11.5
       zod:
         specifier: 3.23.8
         version: 3.23.8
     devDependencies:
+      '@types/pg':
+        specifier: 8.15.5
+        version: 8.15.5
       tslib:
         specifier: 2.6.3
         version: 2.6.3
@@ -306,6 +315,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@apps/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@aws-sdk/client-s3':
         specifier: 3.896.0
         version: 3.896.0

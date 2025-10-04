@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, asc, desc, eq, ilike, lt } from "drizzle-orm";
 import type { ClassQuery, CreateClassInput, UpdateClassInput } from "@shared/schemas";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
+import type { Database } from "@shared/db/client";
 import {
   classes,
   enrollments,
@@ -11,7 +11,7 @@ import {
   subjects,
   teachers,
   terms,
-} from "../../db/schema";
+} from "@shared/db/schema";
 import { nanoid } from "nanoid";
 
 @Injectable()

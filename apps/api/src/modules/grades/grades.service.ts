@@ -2,7 +2,7 @@ import { ConflictException, Inject, Injectable, UnauthorizedException } from "@n
 import { and, eq } from "drizzle-orm";
 import type { CreateGradeInput, GradeQueryInput } from "@shared/schemas";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
+import type { Database } from "@shared/db/client";
 import {
   classes,
   enrollments,
@@ -11,7 +11,7 @@ import {
   students,
   subjects,
   teachers,
-} from "../../db/schema";
+} from "@shared/db/schema";
 import { nanoid } from "nanoid";
 import type { RequestUser } from "@api/auth/auth.types";
 import { OwnershipService } from "../../common/services/ownership.service";

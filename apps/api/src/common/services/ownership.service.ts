@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { RequestUser, AppRole } from "@api/auth/auth.types";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
+import type { Database } from "@shared/db/client";
 import {
   classes,
   enrollments,
@@ -9,7 +9,7 @@ import {
   scheduleEntries,
   teachingAssignments,
   attendance as attendanceTable,
-} from "../../db/schema";
+} from "@shared/db/schema";
 import { and, eq } from "drizzle-orm";
 
 const ADMIN_ROLES: AppRole[] = ["SUPERADMIN", "ADMIN", "OPERATOR"];

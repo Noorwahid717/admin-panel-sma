@@ -1,8 +1,8 @@
 import { Inject, Injectable, ConflictException, NotFoundException } from "@nestjs/common";
 import type { BulkEnrollmentInput, CreateEnrollmentInput } from "@shared/schemas";
 import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "../../db/client";
-import { enrollments } from "../../db/schema";
+import type { Database } from "@shared/db/client";
+import { enrollments } from "@shared/db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
