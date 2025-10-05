@@ -12,7 +12,10 @@ import { ConfigProvider, App as AntdApp, theme } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { dataProvider } from "./providers/dataProvider";
+import { authProvider } from "./providers/authProvider";
 import { ResourceList } from "./pages/resource-list";
+import { LoginPage } from "./pages/login";
+import { Authenticated } from "@refinedev/core";
 
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
@@ -47,6 +50,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <AntdApp>
             <Refine
               dataProvider={dataProvider}
+              authProvider={authProvider}
               notificationProvider={notificationProvider}
               routerProvider={routerProvider}
               resources={resources.map(({ name, list, meta }) => ({
@@ -60,7 +64,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               }}
             >
               <Routes>
-                <Route element={<ThemedLayoutV2 />}>
+                <Route
+                  element={
+                    <Authenticated key="authenticated-routes" fallback={<LoginPage />}>
+                      <ThemedLayoutV2 />
+                    </Authenticated>
+                  }
+                >
                   <Route index element={<NavigateToResource resource={resources[0].name} />} />
                   {resources.map((resource) => (
                     <Route key={resource.name} path={resource.name}>
@@ -68,6 +78,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                     </Route>
                   ))}
                 </Route>
+                <Route path="/login" element={<LoginPage />} />
                 <Route path="*" element={<ErrorComponent />} />
               </Routes>
 
