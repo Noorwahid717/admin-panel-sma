@@ -298,6 +298,27 @@ pnpm --filter @apps/shared dev
 
 **Catatan**: Monorepo ini sepenuhnya menggunakan ES Modules (ESM) untuk kompatibilitas dengan modern tooling (Vite, Node.js 22+).
 
+### Worker Error: "Named export 'Pool' not found" dari pg module
+
+**Masalah**: Error saat runtime `SyntaxError: Named export 'Pool' not found. The requested module 'pg' is a CommonJS module`.
+
+**Solusi**:
+
+`pg` adalah CommonJS module yang tidak support named exports di ESM. Gunakan default import:
+
+```typescript
+// ❌ Salah - tidak akan bekerja di ESM
+import { Pool } from "pg";
+
+// ✅ Benar - import default lalu destructure
+import pkg from "pg";
+const { Pool } = pkg;
+```
+
+Untuk types, gunakan `InstanceType<typeof Pool>` alih-alih `Pool` type langsung.
+
+**Catatan**: Package CommonJS lain (seperti `ioredis`, `bullmq`) sudah support ESM named exports dengan baik.
+
 ## Contoh curl endpoint utama
 
 Set variabel bantu:
