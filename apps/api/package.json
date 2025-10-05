@@ -15,8 +15,8 @@
     "test:e2e": "vitest --run -c vitest.e2e.config.ts",
     "migrate:generate": "drizzle-kit generate",
     "migrate:push": "drizzle-kit push",
-    "seed": "ts-node src/db/seed.ts",
-    "db:reset": "drizzle-kit push --force && ts-node src/db/seed.ts"
+    "seed": "tsx src/db/seed.ts",
+    "db:reset": "drizzle-kit push --force && tsx src/db/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.896.0",
@@ -71,6 +71,7 @@
     "rimraf": "6.0.1",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
+    "tsx": "4.19.0",
     "@vitest/coverage-v8": "3.2.4",
     "pg-mem": "3.0.5",
     "vitest": "3.2.4",
