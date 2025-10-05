@@ -6,11 +6,10 @@
     "outDir": "dist",
     "incremental": true,
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
-    "baseUrl": "../../",
     "paths": {
-      "@shared/*": ["apps/shared/src/*", "apps/shared/dist/*"],
-      "@api/*": ["apps/api/src/*"],
-      "@worker/*": ["apps/worker/src/*"]
+      "@shared/*": ["../../apps/shared/src/*", "../../apps/shared/dist/*"],
+      "@api/*": ["../../apps/api/src/*"],
+      "@worker/*": ["../../apps/worker/src/*"]
     }
   },
   "include": ["src/**/*"]
