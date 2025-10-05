@@ -1,0 +1,24 @@
+# Nixpacks configuration for Railway deployment
+# This ensures correct build order for the monorepo
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "pnpm"]
+
+[phases.install]
+cmds = [
+  "pnpm install --frozen-lockfile"
+]
+
+[phases.build]
+cmds = [
+  # Build shared package first (required by API and worker)
+  "pnpm --filter @apps/shared build",
+  # Build API
+  "pnpm --filter @apps/api build",
+  # Build worker
+  "pnpm --filter @apps/worker build"
+]
+
+[start]
+# This will be overridden per service in Railway
+cmd = "echo 'Please set start command per service in Railway'"
