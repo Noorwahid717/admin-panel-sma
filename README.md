@@ -171,14 +171,22 @@ Gunakan `docker compose -f docker-compose.dev.yml down` untuk mematikannya. Data
 ### Admin (Vercel)
 
 1. Hubungkan repository ke Vercel.
-2. Vercel akan otomatis mendeteksi konfigurasi dari `vercel.json` di root repository:
-   - **Install Command**: `pnpm install`
-   - **Build Command**: `pnpm --filter @apps/shared build && pnpm --filter @apps/admin build`
-   - **Output Directory**: `apps/admin/dist`
-3. Tambahkan env `VITE_API_URL` mengarah ke domain API produksi (mis. `https://api.example.sch.id/api/v1`).
-4. Deploy; Vercel akan melayani aplikasi admin statis.
+2. Di **Project Settings** → **General**, set:
+   - **Root Directory**: `apps/admin` (penting untuk monorepo!)
+   - **Framework Preset**: Other (atau Vite jika tersedia)
+3. Vercel akan otomatis mendeteksi `vercel.json` di `apps/admin/`:
+   - **Install Command**: `cd ../.. && pnpm install`
+   - **Build Command**: `cd ../.. && pnpm --filter @apps/shared build && pnpm --filter @apps/admin build`
+   - **Output Directory**: `dist`
+4. Di **Environment Variables**, tambahkan:
+   - `VITE_API_URL`: URL API produksi (mis. `https://api.example.sch.id/api/v1`)
+5. Deploy; Vercel akan melayani aplikasi admin statis.
 
-> **Catatan**: Build admin memerlukan package `@apps/shared` di-build terlebih dahulu karena menggunakan schemas dan types dari shared package. Proses ini sudah dikonfigurasi otomatis dalam `vercel.json`.
+> **Catatan Penting**:
+>
+> - Root Directory harus di-set ke `apps/admin` karena ini monorepo
+> - Build command perlu `cd ../..` untuk kembali ke root agar pnpm workspace bekerja
+> - Shared package di-build terlebih dahulu sebelum admin
 
 ### API & Worker (Railway)
 
@@ -206,6 +214,18 @@ Gunakan `docker compose -f docker-compose.dev.yml down` untuk mematikannya. Data
 3. Set `REDIS_URL` pada API dan worker.
 
 ## Troubleshooting
+
+### Error: "No Output Directory named 'dist' found" di Vercel
+
+**Masalah**: Vercel tidak menemukan output directory setelah build selesai.
+
+**Solusi**:
+
+1. Pastikan **Root Directory** di-set ke `apps/admin` di Project Settings → General di dashboard Vercel
+2. Output Directory harus `dist` (relatif dari root directory yang sudah di-set, bukan `apps/admin/dist`)
+3. Build command harus `cd ../.. && pnpm --filter @apps/shared build && pnpm --filter @apps/admin build`
+4. Install command harus `cd ../.. && pnpm install`
+5. Vercel akan membaca konfigurasi dari `apps/admin/vercel.json`
 
 ### Build Error: "is not exported by" saat deploy ke Vercel
 
