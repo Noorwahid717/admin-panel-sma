@@ -243,6 +243,78 @@ Gunakan `docker compose -f docker-compose.dev.yml down` untuk mematikannya. Data
 2. Shared package harus di-build terlebih dahulu menjadi ESM sebelum build admin
 3. Vercel akan otomatis menjalankan build sequence yang benar via `vercel.json`
 
+### Halaman Admin Kosong atau Cannot Connect to API
+
+**Masalah**: Aplikasi admin berhasil deploy tapi halaman kosong atau tidak bisa koneksi ke API.
+
+**Diagnosis**:
+
+1. **Test API Health Check**:
+
+   ```bash
+   # Endpoint yang benar
+   curl https://your-api.railway.app/api/v1/health
+
+   # Should return: {"status":"ok","timestamp":"...","environment":"production"}
+   ```
+
+2. **Cek Console Browser** (F12 → Console):
+
+   - ❌ **CORS Error**: API belum include domain Vercel di `CORS_ALLOWED_ORIGINS`
+   - ❌ **404 Not Found**: `VITE_API_URL` salah atau API belum deploy
+   - ❌ **Network Error**: API down atau URL tidak valid
+
+3. **Verifikasi Environment Variables**:
+
+   **Di Vercel** (Admin):
+
+   ```bash
+   VITE_API_URL=https://your-api.railway.app/api/v1
+   ```
+
+   ⚠️ Tanpa trailing slash! Setelah set, **REDEPLOY** aplikasi.
+
+   **Di Railway** (API):
+
+   ```bash
+   CORS_ALLOWED_ORIGINS=https://your-admin.vercel.app
+   APP_BASE_URL=https://your-admin.vercel.app
+   ```
+
+   Setelah set, **RESTART** service API.
+
+4. **Test Login API**:
+
+   ```bash
+   curl -X POST https://your-api.railway.app/api/v1/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"superadmin@example.com","password":"SuperSecure123!@#"}'
+   ```
+
+   Jika berhasil, Anda akan dapat `accessToken`. Jika gagal:
+
+   - **401**: Password salah atau user tidak ada (perlu seed database)
+   - **404**: Endpoint tidak ditemukan (API belum deploy dengan benar)
+   - **500**: Database error (check Railway logs)
+
+5. **Cek Database Seed**:
+
+   ```bash
+   # Via Railway CLI
+   railway run pnpm --filter @apps/api seed
+
+   # Atau via SQL query di Supabase/Neon
+   SELECT email, role FROM users WHERE role = 'SUPERADMIN';
+   ```
+
+**Solusi**:
+
+- Pastikan API deployed dan accessible
+- Set environment variables dengan benar
+- Redeploy Vercel setelah set `VITE_API_URL`
+- Restart Railway API setelah set `CORS_ALLOWED_ORIGINS`
+- Seed database jika belum ada user
+
 ### Development vs Production Build
 
 - **Development**: Vite menggunakan source files langsung dari `apps/shared/src` untuk HMR (Hot Module Replacement) yang cepat
