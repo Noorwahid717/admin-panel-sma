@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import pkg from "pg";
+const { Pool } = pkg;
 import * as schema from "./schema.js";
 
 export const createDatabasePool = (connectionString: string) => {
@@ -13,4 +14,5 @@ export const createDatabasePool = (connectionString: string) => {
 
 export type Database = NodePgDatabase<typeof schema>;
 
-export const createDbClient = (pool: Pool): Database => drizzle(pool, { schema });
+export const createDbClient = (pool: InstanceType<typeof Pool>): Database =>
+  drizzle(pool, { schema });
