@@ -7,28 +7,58 @@ interface LoginParams {
   password: string;
 }
 
-interface AuthResponse {
-  access_token: string;
-  refresh_token: string;
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-    role: string;
-  };
+type TokenResponse = {
+  accessToken?: string;
+  refreshToken?: string;
+  access_token?: string;
+  refresh_token?: string;
+  expiresIn?: number;
+  refreshExpiresIn?: number;
+  expires_in?: number;
+  refresh_expires_in?: number;
+  tokenType?: "Bearer";
+  token_type?: string;
+  user?: MeResponse;
+};
+
+interface MeResponse {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+  teacherId?: string | null;
+  studentId?: string | null;
 }
 
 // Helper to get tokens from localStorage
-const getAccessToken = () => localStorage.getItem("access_token");
-const getRefreshToken = () => localStorage.getItem("refresh_token");
+const getAccessToken = () =>
+  localStorage.getItem("access_token") ?? localStorage.getItem("accessToken");
+const getRefreshToken = () =>
+  localStorage.getItem("refresh_token") ?? localStorage.getItem("refreshToken");
 const setTokens = (accessToken: string, refreshToken: string) => {
   localStorage.setItem("access_token", accessToken);
   localStorage.setItem("refresh_token", refreshToken);
+  // Legacy camelCase keys for backward compatibility with earlier builds
+  localStorage.setItem("accessToken", accessToken);
+  localStorage.setItem("refreshToken", refreshToken);
 };
 const clearTokens = () => {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
+};
+
+const normalizeTokens = (tokens: TokenResponse) => {
+  const accessToken = tokens.accessToken ?? tokens.access_token;
+  const refreshToken = tokens.refreshToken ?? tokens.refresh_token;
+
+  if (!accessToken || !refreshToken) {
+    return null;
+  }
+
+  return { accessToken, refreshToken };
 };
 
 export const authProvider: AuthProvider = {
@@ -53,11 +83,47 @@ export const authProvider: AuthProvider = {
         };
       }
 
-      const data: AuthResponse = await response.json();
+      const body: TokenResponse = await response.json();
+      const normalizedTokens = normalizeTokens(body);
 
-      // Store tokens and user info
-      setTokens(data.access_token, data.refresh_token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      if (!normalizedTokens) {
+        return {
+          success: false,
+          error: {
+            name: "LoginError",
+            message: "Authentication response did not include access tokens.",
+          },
+        };
+      }
+
+      const { accessToken, refreshToken } = normalizedTokens;
+
+      // Store tokens first
+      setTokens(accessToken, refreshToken);
+
+      if (body.user) {
+        localStorage.setItem("user", JSON.stringify(body.user));
+      }
+
+      try {
+        const meResponse = await fetch(`${API_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (meResponse.ok) {
+          const user: MeResponse = await meResponse.json();
+          localStorage.setItem("user", JSON.stringify(user));
+        } else if (!body.user) {
+          localStorage.removeItem("user");
+        }
+      } catch (error) {
+        console.error("Failed to fetch user profile after login", error);
+        if (!body.user) {
+          localStorage.removeItem("user");
+        }
+      }
 
       return {
         success: true,
