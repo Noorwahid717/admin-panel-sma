@@ -196,9 +196,10 @@ Gunakan `docker compose -f docker-compose.dev.yml down` untuk mematikannya. Data
    - Start command: `pnpm --filter @apps/api start:prod`
    - Tambahkan semua variabel dari `apps/api/.env`.
 3. Pada service worker:
-   - Build command: `pnpm install --frozen-lockfile && pnpm --filter @apps/worker build`
-   - Start command: `node apps/worker/dist/index.js`
+   - Build command: `pnpm install --frozen-lockfile && pnpm --filter @apps/shared build && pnpm --filter @apps/worker build`
+   - Start command: `pnpm --filter @apps/worker start:prod`
    - Gunakan variabel environment yang sama (DB, Redis, storage).
+   - **Penting**: Shared package harus di-build terlebih dahulu karena worker depends on ESM modules dari shared
 4. Hubungkan Railway Postgres (atau Neon) dan Upstash Redis menggunakan variable `DATABASE_URL` & `REDIS_URL`.
 
 ### Database (Supabase atau Neon)
@@ -262,6 +263,23 @@ Atau gunakan watch mode saat development:
 ```bash
 pnpm --filter @apps/shared dev
 ```
+
+### Worker Error: "exports is not defined in ES module scope"
+
+**Masalah**: Worker gagal dengan error tentang `exports` tidak terdefinisi di ESM scope.
+
+**Solusi**:
+
+1. Pastikan semua packages (shared, worker) menggunakan `"type": "module"` di package.json
+2. Semua relative imports harus include `.js` extension (ESM requirement)
+3. Import dari shared package menggunakan `@apps/shared/*` bukan `@shared/*`
+4. Build sequence harus: `shared` → `worker` → `admin`
+5. Untuk Railway deployment:
+   ```bash
+   pnpm --filter @apps/shared build && pnpm --filter @apps/worker build
+   ```
+
+**Catatan**: Monorepo ini sepenuhnya menggunakan ES Modules (ESM) untuk kompatibilitas dengan modern tooling (Vite, Node.js 22+).
 
 ## Contoh curl endpoint utama
 
