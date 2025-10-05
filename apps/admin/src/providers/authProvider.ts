@@ -8,14 +8,20 @@ interface LoginParams {
 }
 
 interface AuthResponse {
-  access_token: string;
-  refresh_token: string;
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-    role: string;
-  };
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  refreshExpiresIn: number;
+  tokenType: string;
+}
+
+interface UserResponse {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+  teacherId?: string | null;
+  studentId?: string | null;
 }
 
 // Helper to get tokens from localStorage
@@ -55,9 +61,25 @@ export const authProvider: AuthProvider = {
 
       const data: AuthResponse = await response.json();
 
-      // Store tokens and user info
-      setTokens(data.access_token, data.refresh_token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // Store tokens
+      setTokens(data.accessToken, data.refreshToken);
+
+      // Fetch user info using the access token
+      try {
+        const userResponse = await fetch(`${API_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${data.accessToken}`,
+          },
+        });
+
+        if (userResponse.ok) {
+          const user: UserResponse = await userResponse.json();
+          localStorage.setItem("user", JSON.stringify(user));
+        }
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
+        // Continue anyway - user info can be fetched later
+      }
 
       return {
         success: true,
