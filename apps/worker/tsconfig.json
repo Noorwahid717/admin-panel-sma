@@ -8,7 +8,7 @@
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "baseUrl": "../../",
     "paths": {
-      "@shared/*": ["apps/shared/src/*"],
+      "@shared/*": ["apps/shared/src/*", "apps/shared/dist/*"],
       "@api/*": ["apps/api/src/*"],
       "@worker/*": ["apps/worker/src/*"]
     }
