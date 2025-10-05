@@ -196,10 +196,10 @@ Gunakan `docker compose -f docker-compose.dev.yml down` untuk mematikannya. Data
    - Start command: `pnpm --filter @apps/api start:prod`
    - Tambahkan semua variabel dari `apps/api/.env`.
 3. Pada service worker:
-   - Build command: `pnpm install --frozen-lockfile && pnpm --filter @apps/shared build && pnpm --filter @apps/worker build`
+   - Build command: `pnpm install --frozen-lockfile && pnpm --filter @apps/worker build:railway`
    - Start command: `pnpm --filter @apps/worker start:prod`
    - Gunakan variabel environment yang sama (DB, Redis, storage).
-   - **Penting**: Shared package harus di-build terlebih dahulu karena worker depends on ESM modules dari shared
+   - **Penting**: Script `build:railway` otomatis build shared package terlebih dahulu
 4. Hubungkan Railway Postgres (atau Neon) dan Upstash Redis menggunakan variable `DATABASE_URL` & `REDIS_URL`.
 
 ### Database (Supabase atau Neon)
@@ -264,20 +264,37 @@ Atau gunakan watch mode saat development:
 pnpm --filter @apps/shared dev
 ```
 
+### Worker Error: "Cannot find module '@apps/shared/...' "
+
+**Masalah**: TypeScript compilation gagal karena tidak menemukan module `@apps/shared`.
+
+**Solusi**:
+
+1. **Railway/Production**: Gunakan script `build:railway` yang otomatis build shared terlebih dahulu:
+
+   ```bash
+   pnpm install --frozen-lockfile && pnpm --filter @apps/worker build:railway
+   ```
+
+2. **Local Development**: Build shared terlebih dahulu atau gunakan script build biasa:
+
+   ```bash
+   pnpm --filter @apps/shared build
+   pnpm --filter @apps/worker build
+   ```
+
+3. **Root cause**: Worker depends on `@apps/shared` package yang harus di-compile menjadi ESM modules di `apps/shared/dist/` sebelum worker bisa di-compile.
+
 ### Worker Error: "exports is not defined in ES module scope"
 
-**Masalah**: Worker gagal dengan error tentang `exports` tidak terdefinisi di ESM scope.
+**Masalah**: Worker runtime gagal dengan error tentang `exports` tidak terdefinisi di ESM scope.
 
 **Solusi**:
 
 1. Pastikan semua packages (shared, worker) menggunakan `"type": "module"` di package.json
 2. Semua relative imports harus include `.js` extension (ESM requirement)
 3. Import dari shared package menggunakan `@apps/shared/*` bukan `@shared/*`
-4. Build sequence harus: `shared` → `worker` → `admin`
-5. Untuk Railway deployment:
-   ```bash
-   pnpm --filter @apps/shared build && pnpm --filter @apps/worker build
-   ```
+4. Semua barrel exports (index.ts) harus include `.js` di re-exports
 
 **Catatan**: Monorepo ini sepenuhnya menggunakan ES Modules (ESM) untuk kompatibilitas dengan modern tooling (Vite, Node.js 22+).
 
