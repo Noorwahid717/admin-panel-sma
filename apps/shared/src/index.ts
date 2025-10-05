@@ -1,6 +1,6 @@
-export * from "./schemas";
-export * from "./constants";
-export * from "./types";
+export * from "./schemas/index.js";
+export * from "./constants/index.js";
+export * from "./types/index.js";
 // Export db exports with specific names to avoid conflicts
 export {
   users,

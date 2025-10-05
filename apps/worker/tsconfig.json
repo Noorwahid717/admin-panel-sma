@@ -1,17 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022",
     "outDir": "dist",
+    "rootDir": "src",
     "incremental": true,
-    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
-    "baseUrl": "../../",
-    "paths": {
-      "@shared/*": ["apps/shared/src/*", "apps/shared/dist/*"],
-      "@api/*": ["apps/api/src/*"],
-      "@worker/*": ["apps/worker/src/*"]
-    }
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo"
   },
   "include": ["src/**/*"]
 }

@@ -3,9 +3,9 @@ import "dotenv/config";
 
 import { QueueEvents } from "bullmq";
 import { Redis } from "ioredis";
-import { REPORT_PDF_QUEUE } from "@shared/constants";
-import { createReportPdfWorker } from "./queues/report-pdf";
-import { closeDatabase } from "./lib/database";
+import { REPORT_PDF_QUEUE } from "@apps/shared/constants";
+import { createReportPdfWorker } from "./queues/report-pdf.js";
+import { closeDatabase } from "./lib/database.js";
 
 function createQueueEvents(): QueueEvents {
   const url = process.env.REDIS_URL;

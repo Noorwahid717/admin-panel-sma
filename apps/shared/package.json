@@ -33,7 +33,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "lint": "eslint \"src\"",
     "test": "vitest",
     "dev": "pnpm build --watch",
@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@types/pg": "8.15.5",
+    "tsc-alias": "^1.8.10",
     "tslib": "2.6.3",
     "vitest": "1.6.0"
   }

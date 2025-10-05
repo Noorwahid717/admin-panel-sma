@@ -2,14 +2,14 @@
 import { Worker, Job } from "bullmq";
 import { eq } from "drizzle-orm";
 import { Redis } from "ioredis";
-import { REPORT_PDF_QUEUE } from "@shared/constants";
-import { reportPdfJobSchema, type ReportPdfJobData } from "@shared/schemas";
-import { reportJobs } from "@shared/db/schema";
-import type { Database } from "@shared/db/client";
-import { buildReportPdfPayload } from "../lib/report-data";
-import { generateReportPdf } from "../lib/pdf";
-import { getDatabase, closeDatabase } from "../lib/database";
-import { uploadReportPdf } from "../lib/storage";
+import { REPORT_PDF_QUEUE } from "@apps/shared/constants";
+import { reportPdfJobSchema, type ReportPdfJobData } from "@apps/shared/schemas";
+import { reportJobs } from "@apps/shared/db/schema";
+import type { Database } from "@apps/shared/db/client";
+import { buildReportPdfPayload } from "../lib/report-data.js";
+import { generateReportPdf } from "../lib/pdf.js";
+import { getDatabase, closeDatabase } from "../lib/database.js";
+import { uploadReportPdf } from "../lib/storage.js";
 
 export type ReportPdfJob = ReportPdfJobData;
 

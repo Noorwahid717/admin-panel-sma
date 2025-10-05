@@ -4,7 +4,7 @@ import {
   PASSWORD_MIN_LENGTH,
   PASSWORD_COMPLEXITY_REGEX,
   PASSWORD_COMPLEXITY_MESSAGE,
-} from "../constants";
+} from "../constants/index.js";
 
 const passwordPolicy = z
   .string()
