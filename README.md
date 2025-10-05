@@ -1,6 +1,29 @@
 # admin-panel-sma
 
-Platform pengelolaan absensi dan nilai siswa berbasis NestJS + React Admin. Monorepo ini memuat API terpusat, worker BullMQ, dan aplikasi admin berbasis Vite.
+Platform pengelolaan absensi dan nilai siswa berbasis NestJS + React Admin. Monorepo ini memuat API terpusat, worker BullMQ, aplikasi admin berbasis Vite, dan shared package untuk schemas/types yang digunakan bersama.
+
+## Struktur Monorepo
+
+```
+admin-panel-sma/
+├── apps/
+│   ├── api/          # NestJS backend API
+│   ├── admin/        # React Admin frontend (Vite)
+│   ├── worker/       # BullMQ worker untuk background jobs
+│   └── shared/       # Shared schemas, types, dan constants (ESM)
+├── docs/             # Dokumentasi deployment dan fixes
+├── vercel.json       # Konfigurasi deployment Vercel
+└── pnpm-workspace.yaml
+```
+
+Package `@apps/shared` berisi:
+
+- Zod schemas untuk validasi (auth, users, students, dll)
+- TypeScript types dan interfaces
+- Database schema definitions (Drizzle ORM)
+- Shared constants (roles, queue names, dll)
+
+Package ini di-build sebagai ES Modules (ESM) agar kompatibel dengan Vite dan bundler modern.
 
 ## Daftar isi
 
@@ -148,10 +171,14 @@ Gunakan `docker compose -f docker-compose.dev.yml down` untuk mematikannya. Data
 ### Admin (Vercel)
 
 1. Hubungkan repository ke Vercel.
-2. Pilih root repo, lalu set **Install Command** `pnpm install` dan **Build Command** `pnpm --filter @apps/admin build`.
-3. Set **Output Directory** ke `apps/admin/dist`.
-4. Tambahkan env `VITE_API_URL` mengarah ke domain API produksi (mis. `https://api.example.sch.id/api/v1`).
-5. Deploy; Vercel akan melayani aplikasi admin statis.
+2. Vercel akan otomatis mendeteksi konfigurasi dari `vercel.json` di root repository:
+   - **Install Command**: `pnpm install`
+   - **Build Command**: `pnpm --filter @apps/shared build && pnpm --filter @apps/admin build`
+   - **Output Directory**: `apps/admin/dist`
+3. Tambahkan env `VITE_API_URL` mengarah ke domain API produksi (mis. `https://api.example.sch.id/api/v1`).
+4. Deploy; Vercel akan melayani aplikasi admin statis.
+
+> **Catatan**: Build admin memerlukan package `@apps/shared` di-build terlebih dahulu karena menggunakan schemas dan types dari shared package. Proses ini sudah dikonfigurasi otomatis dalam `vercel.json`.
 
 ### API & Worker (Railway)
 
@@ -177,6 +204,44 @@ Gunakan `docker compose -f docker-compose.dev.yml down` untuk mematikannya. Data
 1. Buat database baru (mode REST atau TLS) di Upstash.
 2. Catat URL `rediss://` beserta token.
 3. Set `REDIS_URL` pada API dan worker.
+
+## Troubleshooting
+
+### Build Error: "is not exported by" saat deploy ke Vercel
+
+**Masalah**: Rollup/Vite tidak dapat menemukan export dari `@shared/schemas` atau package shared lainnya.
+
+**Solusi**:
+
+1. Pastikan `@apps/shared` terdaftar sebagai dependency di `apps/admin/package.json`:
+   ```json
+   "dependencies": {
+     "@apps/shared": "workspace:*"
+   }
+   ```
+2. Shared package harus di-build terlebih dahulu menjadi ESM sebelum build admin
+3. Vercel akan otomatis menjalankan build sequence yang benar via `vercel.json`
+
+### Development vs Production Build
+
+- **Development**: Vite menggunakan source files langsung dari `apps/shared/src` untuk HMR (Hot Module Replacement) yang cepat
+- **Production**: Vite menggunakan compiled files dari `apps/shared/dist` untuk module resolution yang proper
+
+Konfigurasi ini diatur di `apps/admin/vite.config.ts` dengan conditional alias berdasarkan mode.
+
+### Shared Package Changes
+
+Jika Anda melakukan perubahan pada `apps/shared`, rebuild package tersebut:
+
+```bash
+pnpm --filter @apps/shared build
+```
+
+Atau gunakan watch mode saat development:
+
+```bash
+pnpm --filter @apps/shared dev
+```
 
 ## Contoh curl endpoint utama
 
@@ -207,13 +272,14 @@ curl -X POST "$API_BASE/students" \
 	-H "Authorization: Bearer $TOKEN" \
 	-d '{
 		"nis": "2025-0001",
-		"nisn": "1234567890",
 		"fullName": "Aisyah Pratama",
-		"gender": "FEMALE",
-		"classId": "cls_123",
-		"guardian": {"name": "Rudi", "phone": "+628123456789"}
+		"birthDate": "2010-05-15",
+		"gender": "F",
+		"guardian": "Rudi (Ayah) - +628123456789"
 	}'
 ```
+
+> **Catatan**: `gender` menggunakan `"M"` (Male) atau `"F"` (Female). Field `guardian` adalah string opsional berisi informasi wali.
 
 Untuk read/update/delete gunakan metode `GET /students/:id`, `PATCH /students/:id`, dan `DELETE /students/:id` dengan header yang sama.
 
@@ -225,13 +291,26 @@ curl -X POST "$API_BASE/attendance/bulk" \
 	-H "Authorization: Bearer $TOKEN" \
 	-d '{
 		"classId": "cls_123",
-		"date": "2025-01-15",
+		"termId": "term_2024",
 		"records": [
-			{"studentId": "stu_001", "status": "PRESENT"},
-			{"studentId": "stu_002", "status": "SICK"}
+			{
+				"enrollmentId": "enr_001",
+				"date": "2025-01-15",
+				"sessionType": "Harian",
+				"status": "H"
+			},
+			{
+				"enrollmentId": "enr_002",
+				"date": "2025-01-15",
+				"sessionType": "Harian",
+				"status": "S"
+			}
 		]
 	}'
 ```
+
+> **Status Kehadiran**: `"H"` (Hadir), `"I"` (Izin), `"S"` (Sakit), `"A"` (Alpa/Tanpa Keterangan)  
+> **Session Type**: `"Harian"` (absensi harian) atau `"Mapel"` (per mata pelajaran)
 
 ### 4. Query nilai
 
@@ -247,10 +326,8 @@ curl -X POST "$API_BASE/reports" \
 	-H "Content-Type: application/json" \
 	-H "Authorization: Bearer $TOKEN" \
 	-d '{
-		"enrollmentId": "enr_456",
-		"type": "SEMESTER",
-		"format": "PDF"
+		"enrollmentId": "enr_456"
 	}'
 ```
 
-Permintaan ini akan menambahkan job ke `REPORT_PDF_QUEUE`. Pantau log worker atau endpoint `GET /reports` untuk memeriksa statusnya.
+Permintaan ini akan menambahkan job ke `REPORT_PDF_QUEUE`. Pantau log worker atau endpoint `GET /reports/:id` untuk memeriksa statusnya. Worker akan generate PDF rapor berdasarkan data enrollment (siswa, kelas, term, nilai, dan kehadiran).
