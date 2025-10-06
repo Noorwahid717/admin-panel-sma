@@ -151,4 +151,63 @@ const dataProvider: DataProvider = {
   custom: async () => Promise.reject(new Error("custom requests are not implemented yet")),
 };
 
-export { api, dataProvider };
+const formatArg = (arg: unknown) => {
+  if (typeof arg === "string" || typeof arg === "number" || typeof arg === "boolean") {
+    return arg;
+  }
+
+  if (arg instanceof URL) {
+    return arg.toString();
+  }
+
+  try {
+    return JSON.parse(JSON.stringify(arg));
+  } catch (error) {
+    console.warn("[DataProvider] Unable to serialise argument for logging", arg, error);
+    return arg;
+  }
+};
+
+const formatArgs = (args: unknown[]) => args.map(formatArg);
+
+const createDataProviderLogger = (dp: DataProvider): DataProvider =>
+  new Proxy(dp, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+
+      if (typeof value !== "function") {
+        return value;
+      }
+
+      return (...args: unknown[]) => {
+        const formattedArgs = formatArgs(args);
+        console.info("[DataProvider]", String(prop), formattedArgs);
+
+        try {
+          const result = (value as (...innerArgs: unknown[]) => unknown).apply(target, args);
+
+          if (result instanceof Promise) {
+            return result.finally(() => {
+              console.info("[DataProvider]", String(prop), "completed");
+            });
+          }
+
+          console.info("[DataProvider]", String(prop), "completed");
+          return result;
+        } catch (error) {
+          console.error("[DataProvider]", String(prop), "failed", error);
+          throw error;
+        }
+      };
+    },
+  });
+
+const resolveDataProvider = () => {
+  if (import.meta.env.DEV) {
+    return createDataProviderLogger(dataProvider);
+  }
+
+  return dataProvider;
+};
+
+export { api, dataProvider, createDataProviderLogger, resolveDataProvider };
