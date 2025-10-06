@@ -11,11 +11,12 @@ import { ThemedLayoutV2, ErrorComponent, notificationProvider } from "@refinedev
 import { ConfigProvider, App as AntdApp, theme } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { dataProvider } from "./providers/dataProvider";
+import { resolveDataProvider } from "./providers/dataProvider";
 import { authProvider } from "./providers/authProvider";
 import { ResourceList } from "./pages/resource-list";
 import { LoginPage } from "./pages/login";
 import { Authenticated } from "@refinedev/core";
+import { RouteDebugger } from "./components/route-debugger";
 
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
@@ -33,6 +34,8 @@ const resources = [
   { name: "grades", list: "/grades", meta: { label: "Grades" } },
   { name: "attendance", list: "/attendance", meta: { label: "Attendance" } },
 ] as const;
+
+const dataProvider = resolveDataProvider();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -84,6 +87,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
               <DocumentTitleHandler />
               <UnsavedChangesNotifier />
+              <RouteDebugger />
             </Refine>
           </AntdApp>
         </ConfigProvider>
