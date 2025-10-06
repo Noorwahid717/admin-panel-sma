@@ -22,10 +22,16 @@ const formatTitle = (key: string) =>
 
 export const ResourceList = () => {
   const { resource } = useResource();
+  const resourceName = resource?.name;
+
   const { tableProps, tableQueryResult } = useTable({
+    resource: resourceName,
     pagination: {
       current: 1,
       pageSize: 10,
+    },
+    queryOptions: {
+      enabled: Boolean(resourceName),
     },
   });
 
@@ -165,7 +171,9 @@ export const ResourceList = () => {
         <Result
           status="404"
           title="Data tidak ditemukan"
-          subTitle={responseMessage ?? "Endpoint atau data yang diminta tidak tersedia pada server."}
+          subTitle={
+            responseMessage ?? "Endpoint atau data yang diminta tidak tersedia pada server."
+          }
           extra={
             <Space direction="vertical" align="center">
               <Typography.Text type="secondary">Status kode: 404</Typography.Text>
@@ -289,7 +297,10 @@ export const ResourceList = () => {
   const tableLoadingProps = shouldShowSpinner ? { spinning: true, tip: "Memuat data..." } : false;
 
   return (
-    <List title={resource?.meta?.label ?? resource?.label ?? resource?.name}>
+    <List
+      title={resource?.meta?.label ?? resource?.label ?? resource?.name}
+      resource={resourceName}
+    >
       {errorResult}
       {!errorResult && (
         <Table

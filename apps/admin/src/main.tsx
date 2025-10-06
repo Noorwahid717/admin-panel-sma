@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { Refine } from "@refinedev/core";
 import routerProvider, {
   DocumentTitleHandler,
@@ -11,11 +11,12 @@ import { ThemedLayoutV2, ErrorComponent, notificationProvider } from "@refinedev
 import { ConfigProvider, App as AntdApp, theme } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { dataProvider } from "./providers/dataProvider";
+import { resolveDataProvider } from "./providers/dataProvider";
 import { authProvider } from "./providers/authProvider";
 import { ResourceList } from "./pages/resource-list";
 import { LoginPage } from "./pages/login";
 import { Authenticated } from "@refinedev/core";
+import { RouteDebugger } from "./components/route-debugger";
 
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
@@ -33,6 +34,17 @@ const resources = [
   { name: "grades", list: "/grades", meta: { label: "Grades" } },
   { name: "attendance", list: "/attendance", meta: { label: "Attendance" } },
 ] as const;
+
+const dataProvider = resolveDataProvider();
+
+const disableCustomLayout = import.meta.env.VITE_DISABLE_CUSTOM_LAYOUT === "true";
+
+if (disableCustomLayout) {
+  console.info("[Layout] Custom layout disabled. Using plain router outlet.");
+}
+
+const PlainLayout = () => <Outlet />;
+const LayoutComponent: React.ComponentType = disableCustomLayout ? PlainLayout : ThemedLayoutV2;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -67,7 +79,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route
                   element={
                     <Authenticated key="authenticated-routes" fallback={<LoginPage />}>
-                      <ThemedLayoutV2 />
+                      <LayoutComponent />
                     </Authenticated>
                   }
                 >
@@ -84,6 +96,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
               <DocumentTitleHandler />
               <UnsavedChangesNotifier />
+              <RouteDebugger />
             </Refine>
           </AntdApp>
         </ConfigProvider>
