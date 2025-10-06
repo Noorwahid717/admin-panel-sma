@@ -1,11 +1,5 @@
 import axios, { type AxiosResponse } from "axios";
-import type {
-  BaseRecord,
-  CrudFilters,
-  CrudSorting,
-  DataProvider,
-  GetListResponse,
-} from "@refinedev/core";
+import type { BaseRecord, CrudFilters, DataProvider, GetListResponse } from "@refinedev/core";
 import { studentQuerySchema } from "@shared/schemas";
 
 const api = axios.create({
@@ -75,16 +69,6 @@ const transformFilters = (resource: string, filters?: CrudFilters): Record<strin
   return parsed.success ? parsed.data : flattened;
 };
 
-const buildSorting = (sorters?: CrudSorting): string | undefined => {
-  if (!sorters || sorters.length === 0) {
-    return undefined;
-  }
-
-  return sorters
-    .map((sorter) => `${sorter.field}:${sorter.order === "asc" ? "asc" : "desc"}`)
-    .join(",");
-};
-
 const extractListPayload = <TData extends BaseRecord = BaseRecord>(
   response: AxiosResponse
 ): GetListResponse<TData> => {
@@ -124,32 +108,28 @@ const ensureParams = (
   resource: string;
   pagination?: { current?: number; pageSize?: number };
   filters?: CrudFilters;
-  sorters?: CrudSorting;
   meta?: Record<string, unknown>;
 } => ({
   resource: params.resource,
   pagination: params.pagination,
   filters: params.filters,
-  sorters: params.sorters,
   meta: params.meta,
 });
 
 const dataProvider: DataProvider = {
   getList: async (params) => {
-    const { resource, pagination, filters, sorters, meta } = ensureParams(params);
+    const { resource, pagination, filters, meta } = ensureParams(params);
 
     const queryParams: Record<string, unknown> = {
       ...transformFilters(resource, filters as CrudFilters | undefined),
     };
 
-    if (pagination) {
-      queryParams.page = pagination.current ?? 1;
-      queryParams.limit = pagination.pageSize ?? 10;
+    if (pagination?.pageSize) {
+      queryParams.limit = pagination.pageSize;
     }
 
-    const sort = buildSorting(sorters as CrudSorting | undefined);
-    if (sort) {
-      queryParams.sort = sort;
+    if (meta?.cursor) {
+      queryParams.cursor = meta.cursor;
     }
 
     const response = await api.get(`/${resource}`, {

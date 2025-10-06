@@ -7,15 +7,21 @@ interface LoginParams {
   password: string;
 }
 
-interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  refreshExpiresIn: number;
-  tokenType: string;
-}
+type TokenResponse = {
+  accessToken?: string;
+  refreshToken?: string;
+  access_token?: string;
+  refresh_token?: string;
+  expiresIn?: number;
+  refreshExpiresIn?: number;
+  expires_in?: number;
+  refresh_expires_in?: number;
+  tokenType?: "Bearer";
+  token_type?: string;
+  user?: MeResponse;
+};
 
-interface UserResponse {
+interface MeResponse {
   id: string;
   email: string;
   fullName: string;
@@ -25,16 +31,34 @@ interface UserResponse {
 }
 
 // Helper to get tokens from localStorage
-const getAccessToken = () => localStorage.getItem("access_token");
-const getRefreshToken = () => localStorage.getItem("refresh_token");
+const getAccessToken = () =>
+  localStorage.getItem("access_token") ?? localStorage.getItem("accessToken");
+const getRefreshToken = () =>
+  localStorage.getItem("refresh_token") ?? localStorage.getItem("refreshToken");
 const setTokens = (accessToken: string, refreshToken: string) => {
   localStorage.setItem("access_token", accessToken);
   localStorage.setItem("refresh_token", refreshToken);
+  // Legacy camelCase keys for backward compatibility with earlier builds
+  localStorage.setItem("accessToken", accessToken);
+  localStorage.setItem("refreshToken", refreshToken);
 };
 const clearTokens = () => {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
+};
+
+const normalizeTokens = (tokens: TokenResponse) => {
+  const accessToken = tokens.accessToken ?? tokens.access_token;
+  const refreshToken = tokens.refreshToken ?? tokens.refresh_token;
+
+  if (!accessToken || !refreshToken) {
+    return null;
+  }
+
+  return { accessToken, refreshToken };
 };
 
 export const authProvider: AuthProvider = {
@@ -42,9 +66,7 @@ export const authProvider: AuthProvider = {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
@@ -59,32 +81,48 @@ export const authProvider: AuthProvider = {
         };
       }
 
-      const data: AuthResponse = await response.json();
+      const body: TokenResponse = await response.json();
+      const normalizedTokens = normalizeTokens(body);
 
-      // Store tokens
-      setTokens(data.accessToken, data.refreshToken);
-
-      // Fetch user info using the access token
-      try {
-        const userResponse = await fetch(`${API_URL}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${data.accessToken}`,
+      if (!normalizedTokens) {
+        return {
+          success: false,
+          error: {
+            name: "LoginError",
+            message: "Authentication response did not include access tokens.",
           },
-        });
-
-        if (userResponse.ok) {
-          const user: UserResponse = await userResponse.json();
-          localStorage.setItem("user", JSON.stringify(user));
-        }
-      } catch (error) {
-        console.error("Failed to fetch user info:", error);
-        // Continue anyway - user info can be fetched later
+        };
       }
 
-      return {
-        success: true,
-        redirectTo: "/",
-      };
+      const { accessToken, refreshToken } = normalizedTokens;
+
+      // Store tokens first
+      setTokens(accessToken, refreshToken);
+
+      // If backend already returned user, store it. Otherwise try fetching /auth/me
+      if (body.user) {
+        localStorage.setItem("user", JSON.stringify(body.user));
+      }
+
+      try {
+        const meResponse = await fetch(`${API_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (meResponse.ok) {
+          const user: MeResponse = await meResponse.json();
+          localStorage.setItem("user", JSON.stringify(user));
+        } else if (!body.user) {
+          localStorage.removeItem("user");
+        }
+      } catch (error) {
+        console.error("Failed to fetch user profile after login", error);
+        if (!body.user) {
+          localStorage.removeItem("user");
+        }
+      }
+
+      return { success: true, redirectTo: "/" };
     } catch (error) {
       return {
         success: false,
@@ -127,45 +165,31 @@ export const authProvider: AuthProvider = {
     const token = getAccessToken();
 
     if (!token) {
-      return {
-        authenticated: false,
-        redirectTo: "/login",
-        logout: true,
-      };
+      return { authenticated: false, redirectTo: "/login", logout: true };
     }
 
     // Optionally verify token with backend
     try {
       const response = await fetch(`${API_URL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
         clearTokens();
-        return {
-          authenticated: false,
-          redirectTo: "/login",
-          logout: true,
-        };
+        return { authenticated: false, redirectTo: "/login", logout: true };
       }
 
-      return {
-        authenticated: true,
-      };
-    } catch (error) {
+      return { authenticated: true };
+    } catch {
       // If /auth/me doesn't exist, just check token presence
-      return {
-        authenticated: true,
-      };
+      return { authenticated: true };
     }
   },
 
   getPermissions: async () => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
-      const user = JSON.parse(userStr);
+      const user = JSON.parse(userStr) as MeResponse;
       return user.role;
     }
     return null;
@@ -174,7 +198,7 @@ export const authProvider: AuthProvider = {
   getIdentity: async () => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
-      const user = JSON.parse(userStr);
+      const user = JSON.parse(userStr) as MeResponse;
       return {
         id: user.id,
         name: user.fullName,
@@ -188,13 +212,8 @@ export const authProvider: AuthProvider = {
   onError: async (error) => {
     if (error?.statusCode === 401 || error?.statusCode === 403) {
       clearTokens();
-      return {
-        logout: true,
-        redirectTo: "/login",
-        error,
-      };
+      return { logout: true, redirectTo: "/login", error };
     }
-
     return { error };
   },
 };
