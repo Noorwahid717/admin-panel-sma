@@ -66,9 +66,7 @@ export const authProvider: AuthProvider = {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
@@ -101,15 +99,14 @@ export const authProvider: AuthProvider = {
       // Store tokens first
       setTokens(accessToken, refreshToken);
 
+      // If backend already returned user, store it. Otherwise try fetching /auth/me
       if (body.user) {
         localStorage.setItem("user", JSON.stringify(body.user));
       }
 
       try {
         const meResponse = await fetch(`${API_URL}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
 
         if (meResponse.ok) {
@@ -125,10 +122,7 @@ export const authProvider: AuthProvider = {
         }
       }
 
-      return {
-        success: true,
-        redirectTo: "/",
-      };
+      return { success: true, redirectTo: "/" };
     } catch (error) {
       return {
         success: false,
@@ -171,45 +165,31 @@ export const authProvider: AuthProvider = {
     const token = getAccessToken();
 
     if (!token) {
-      return {
-        authenticated: false,
-        redirectTo: "/login",
-        logout: true,
-      };
+      return { authenticated: false, redirectTo: "/login", logout: true };
     }
 
     // Optionally verify token with backend
     try {
       const response = await fetch(`${API_URL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
         clearTokens();
-        return {
-          authenticated: false,
-          redirectTo: "/login",
-          logout: true,
-        };
+        return { authenticated: false, redirectTo: "/login", logout: true };
       }
 
-      return {
-        authenticated: true,
-      };
-    } catch (error) {
+      return { authenticated: true };
+    } catch {
       // If /auth/me doesn't exist, just check token presence
-      return {
-        authenticated: true,
-      };
+      return { authenticated: true };
     }
   },
 
   getPermissions: async () => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
-      const user = JSON.parse(userStr);
+      const user = JSON.parse(userStr) as MeResponse;
       return user.role;
     }
     return null;
@@ -218,7 +198,7 @@ export const authProvider: AuthProvider = {
   getIdentity: async () => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
-      const user = JSON.parse(userStr);
+      const user = JSON.parse(userStr) as MeResponse;
       return {
         id: user.id,
         name: user.fullName,
@@ -232,13 +212,8 @@ export const authProvider: AuthProvider = {
   onError: async (error) => {
     if (error?.statusCode === 401 || error?.statusCode === 403) {
       clearTokens();
-      return {
-        logout: true,
-        redirectTo: "/login",
-        error,
-      };
+      return { logout: true, redirectTo: "/login", error };
     }
-
     return { error };
   },
 };
