@@ -119,6 +119,7 @@ export const ResourceList = () => {
       (typeof axiosError === "object" && axiosError !== null
         ? (axiosError as { message?: string }).message
         : undefined);
+
     const debugPayload =
       axiosError?.response?.data ??
       (typeof axiosError?.toJSON === "function" ? axiosError.toJSON() : undefined) ??
@@ -164,9 +165,7 @@ export const ResourceList = () => {
         <Result
           status="404"
           title="Data tidak ditemukan"
-          subTitle={
-            responseMessage ?? "Endpoint atau data yang diminta tidak tersedia pada server."
-          }
+          subTitle={responseMessage ?? "Endpoint atau data yang diminta tidak tersedia pada server."}
           extra={
             <Space direction="vertical" align="center">
               <Typography.Text type="secondary">Status kode: 404</Typography.Text>
