@@ -164,7 +164,10 @@ export const authProvider: AuthProvider = {
   check: async () => {
     const token = getAccessToken();
 
+    console.info("[auth] checkAuth", { hasToken: Boolean(token) });
+
     if (!token) {
+      console.warn("[auth] checkAuth", "No access token found. Redirecting to login.");
       return { authenticated: false, redirectTo: "/login", logout: true };
     }
 
@@ -174,13 +177,17 @@ export const authProvider: AuthProvider = {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.info("[auth] checkAuth", "/auth/me response", response.status);
+
       if (!response.ok) {
+        console.warn("[auth] checkAuth", "Backend rejected token. Clearing session.");
         clearTokens();
         return { authenticated: false, redirectTo: "/login", logout: true };
       }
 
       return { authenticated: true };
-    } catch {
+    } catch (error) {
+      console.error("[auth] checkAuth", "Network error during /auth/me", error);
       // If /auth/me doesn't exist, just check token presence
       return { authenticated: true };
     }
