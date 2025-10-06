@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
-import { Refine } from "@refinedev/core";
+import { Refine, Authenticated } from "@refinedev/core";
 import routerProvider, {
   DocumentTitleHandler,
   NavigateToResource,
@@ -15,7 +15,6 @@ import { resolveDataProvider } from "./providers/dataProvider";
 import { authProvider } from "./providers/authProvider";
 import { ResourceList } from "./pages/resource-list";
 import { LoginPage } from "./pages/login";
-import { Authenticated } from "@refinedev/core";
 import { RouteDebugger } from "./components/route-debugger";
 
 import "@refinedev/antd/dist/reset.css";
@@ -37,14 +36,21 @@ const resources = [
 
 const dataProvider = resolveDataProvider();
 
+// Feature flag untuk mematikan layout kustom via env
 const disableCustomLayout = import.meta.env.VITE_DISABLE_CUSTOM_LAYOUT === "true";
-
 if (disableCustomLayout) {
   console.info("[Layout] Custom layout disabled. Using plain router outlet.");
 }
 
-const PlainLayout = () => <Outlet />;
-const LayoutComponent: React.ComponentType = disableCustomLayout ? PlainLayout : ThemedLayoutV2;
+// Pastikan Outlet selalu dirender baik saat pakai ThemedLayoutV2 maupun plain
+const LayoutWrapper: React.FC = () =>
+  disableCustomLayout ? (
+    <Outlet />
+  ) : (
+    <ThemedLayoutV2>
+      <Outlet />
+    </ThemedLayoutV2>
+  );
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -79,7 +85,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route
                   element={
                     <Authenticated key="authenticated-routes" fallback={<LoginPage />}>
-                      <LayoutComponent />
+                      <LayoutWrapper />
                     </Authenticated>
                   }
                 >
