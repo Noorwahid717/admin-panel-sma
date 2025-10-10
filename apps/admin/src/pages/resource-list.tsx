@@ -48,11 +48,7 @@ export const ResourceList = () => {
     status,
   } = tableQueryResult ?? {};
 
-  const {
-    dataSource: originalDataSource,
-    loading: _originalLoading,
-    ...restTableProps
-  } = tableProps;
+  const { dataSource: originalDataSource, ...restTableProps } = tableProps;
 
   const dataSource = useMemo(() => {
     if (Array.isArray(originalDataSource)) {

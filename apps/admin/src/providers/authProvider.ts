@@ -1,6 +1,16 @@
 import type { AuthProvider } from "@refinedev/core";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+const sanitizeBaseUrl = (rawUrl?: string) => {
+  if (!rawUrl || rawUrl.trim().length === 0) {
+    return "http://localhost:3000/api/v1";
+  }
+
+  return rawUrl.replace(/\/+$/, "");
+};
+
+const API_URL = sanitizeBaseUrl(import.meta.env.VITE_API_URL);
+
+const resolveEndpoint = (path: string) => `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
 interface LoginParams {
   email: string;
@@ -19,6 +29,8 @@ type TokenResponse = {
   tokenType?: "Bearer";
   token_type?: string;
   user?: MeResponse;
+  data?: TokenResponse;
+  result?: TokenResponse;
 };
 
 interface MeResponse {
@@ -31,13 +43,12 @@ interface MeResponse {
 }
 
 // Helper to get tokens from localStorage
-const getAccessToken = () =>
-  localStorage.getItem("access_token") ?? localStorage.getItem("accessToken");
-const getRefreshToken = () =>
-  localStorage.getItem("refresh_token") ?? localStorage.getItem("refreshToken");
+const getAccessToken = () => localStorage.getItem("access_token");
+const getRefreshToken = () => localStorage.getItem("refresh_token");
 const setTokens = (accessToken: string, refreshToken: string) => {
   localStorage.setItem("access_token", accessToken);
   localStorage.setItem("refresh_token", refreshToken);
+
   // Legacy camelCase keys for backward compatibility with earlier builds
   localStorage.setItem("accessToken", accessToken);
   localStorage.setItem("refreshToken", refreshToken);
@@ -50,9 +61,30 @@ const clearTokens = () => {
   localStorage.removeItem("user");
 };
 
-const normalizeTokens = (tokens: TokenResponse) => {
-  const accessToken = tokens.accessToken ?? tokens.access_token;
-  const refreshToken = tokens.refreshToken ?? tokens.refresh_token;
+const unwrapTokenPayload = (payload: TokenResponse | null | undefined): TokenResponse | null => {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  if (payload.data && typeof payload.data === "object") {
+    return unwrapTokenPayload(payload.data);
+  }
+
+  if (payload.result && typeof payload.result === "object") {
+    return unwrapTokenPayload(payload.result);
+  }
+
+  return payload;
+};
+
+const normalizeTokens = (tokens: TokenResponse | null | undefined) => {
+  const payload = unwrapTokenPayload(tokens);
+  if (!payload) {
+    return null;
+  }
+
+  const accessToken = payload.accessToken ?? payload.access_token;
+  const refreshToken = payload.refreshToken ?? payload.refresh_token;
 
   if (!accessToken || !refreshToken) {
     return null;
@@ -64,7 +96,7 @@ const normalizeTokens = (tokens: TokenResponse) => {
 export const authProvider: AuthProvider = {
   login: async ({ email, password }: LoginParams) => {
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
+      const response = await fetch(resolveEndpoint("auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -82,7 +114,7 @@ export const authProvider: AuthProvider = {
       }
 
       const body: TokenResponse = await response.json();
-      const normalizedTokens = normalizeTokens(body);
+      const normalizedTokens = normalizeTokens(body ?? null);
 
       if (!normalizedTokens) {
         return {
@@ -105,7 +137,7 @@ export const authProvider: AuthProvider = {
       }
 
       try {
-        const meResponse = await fetch(`${API_URL}/auth/me`, {
+        const meResponse = await fetch(resolveEndpoint("auth/me"), {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
@@ -123,7 +155,7 @@ export const authProvider: AuthProvider = {
       }
 
       return { success: true, redirectTo: "/" };
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: {
@@ -141,7 +173,7 @@ export const authProvider: AuthProvider = {
     if (accessToken && refreshToken) {
       try {
         // Call logout endpoint to invalidate tokens
-        await fetch(`${API_URL}/auth/logout`, {
+        await fetch(resolveEndpoint("auth/logout"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -164,7 +196,10 @@ export const authProvider: AuthProvider = {
   check: async () => {
     const token = getAccessToken();
 
-    console.info("[auth] checkAuth", { hasToken: Boolean(token) });
+    console.info("[auth] checkAuth", {
+      hasToken: Boolean(token),
+      tokenPreview: token ? `${token.slice(0, 8)}…` : undefined,
+    });
 
     if (!token) {
       console.warn("[auth] checkAuth", "No access token found. Redirecting to login.");
@@ -173,7 +208,7 @@ export const authProvider: AuthProvider = {
 
     // Optionally verify token with backend
     try {
-      const response = await fetch(`${API_URL}/auth/me`, {
+      const response = await fetch(resolveEndpoint("auth/me"), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -213,7 +248,34 @@ export const authProvider: AuthProvider = {
         avatar: undefined,
       };
     }
-    return null;
+
+    const token = getAccessToken();
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(resolveEndpoint("auth/me"), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const user = (await response.json()) as MeResponse;
+      localStorage.setItem("user", JSON.stringify(user));
+
+      return {
+        id: user.id,
+        name: user.fullName,
+        email: user.email,
+        avatar: undefined,
+      };
+    } catch (error) {
+      console.error("[auth] getIdentity", "Failed to fetch identity", error);
+      return null;
+    }
   },
 
   onError: async (error) => {
