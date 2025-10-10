@@ -1,9 +1,21 @@
-import axios, { type AxiosResponse } from "axios";
+import axios, { AxiosHeaders, type AxiosResponse } from "axios";
 import type { BaseRecord, CrudFilters, DataProvider, GetListResponse } from "@refinedev/core";
 import { studentQuerySchema } from "@shared/schemas";
 
+const sanitizeBaseUrl = (rawUrl?: string) => {
+  if (!rawUrl || rawUrl.trim().length === 0) {
+    return "http://localhost:3000/api/v1";
+  }
+
+  return rawUrl.replace(/\/+$/, "");
+};
+
+const API_BASE_URL = sanitizeBaseUrl(import.meta.env.VITE_API_URL);
+
+const ensureLeadingSlash = (path: string) => (path.startsWith("/") ? path : `/${path}`);
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
 
@@ -12,22 +24,33 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access_token");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      if (config.headers instanceof AxiosHeaders) {
+        config.headers.set("Authorization", `Bearer ${token}`);
+      } else {
+        const headers = AxiosHeaders.from(config.headers ?? {});
+        headers.set("Authorization", `Bearer ${token}`);
+        config.headers = headers;
+      }
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+const clearStoredSession = () => {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("user");
+};
+
 // Add response interceptor to handle 401 errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear tokens and redirect to login
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      localStorage.removeItem("user");
+      clearStoredSession();
       window.location.href = "/login";
     }
     return Promise.reject(error);
@@ -69,6 +92,28 @@ const transformFilters = (resource: string, filters?: CrudFilters): Record<strin
   return parsed.success ? parsed.data : flattened;
 };
 
+const resolveTotal = (payload: Record<string, unknown>, fallback: number) => {
+  const directTotal = payload.total;
+  if (typeof directTotal === "number") {
+    return directTotal;
+  }
+
+  const count = payload.count;
+  if (typeof count === "number") {
+    return count;
+  }
+
+  const meta = payload.meta;
+  if (meta && typeof meta === "object" && "total" in meta) {
+    const metaTotal = (meta as { total?: number }).total;
+    if (typeof metaTotal === "number") {
+      return metaTotal;
+    }
+  }
+
+  return fallback;
+};
+
 const extractListPayload = <TData extends BaseRecord = BaseRecord>(
   response: AxiosResponse
 ): GetListResponse<TData> => {
@@ -82,15 +127,30 @@ const extractListPayload = <TData extends BaseRecord = BaseRecord>(
   }
 
   if (payload && typeof payload === "object") {
-    const items =
-      (payload.items as TData[] | undefined) ??
-      (payload.data as TData[] | undefined) ??
-      ([] as TData[]);
-    const total =
-      (payload.total as number | undefined) ??
-      (payload.count as number | undefined) ??
-      items.length;
-    return { data: items, total };
+    const candidates =
+      (payload.data as unknown) ??
+      (payload.items as unknown) ??
+      (payload.results as unknown) ??
+      (payload.rows as unknown);
+
+    if (Array.isArray(candidates)) {
+      return {
+        data: candidates as TData[],
+        total: resolveTotal(payload, candidates.length),
+      };
+    }
+
+    if (candidates && typeof candidates === "object") {
+      return {
+        data: [candidates as TData],
+        total: resolveTotal(payload, 1),
+      };
+    }
+
+    return {
+      data: [],
+      total: resolveTotal(payload, 0),
+    };
   }
 
   return { data: [], total: 0 };
@@ -132,7 +192,7 @@ const dataProvider: DataProvider = {
       queryParams.cursor = meta.cursor;
     }
 
-    const response = await api.get(`/${resource}`, {
+    const response = await api.get(ensureLeadingSlash(resource), {
       params: queryParams,
       headers: resolveHeaders(meta),
       signal: resolveSignal(meta),
