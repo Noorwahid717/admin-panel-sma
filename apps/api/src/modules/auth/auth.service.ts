@@ -1,4 +1,10 @@
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { verify } from "argon2";
@@ -27,6 +33,7 @@ type RequestContext = {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     @Inject(UsersService) private readonly usersService: UsersService,
     @Inject(JwtService) private readonly jwtService: JwtService,
@@ -162,37 +169,54 @@ export class AuthService {
 
   private async ensureNotLocked(email: string, ip: string) {
     const blockKey = this.loginBlockKey(email, ip);
-    const isBlocked = await this.redisService.client.exists(blockKey);
+    try {
+      const isBlocked = await this.redisService.client.exists(blockKey);
 
-    if (isBlocked) {
-      const ttl = await this.redisService.client.ttl(blockKey);
-      throw new UnauthorizedException(
-        ttl > 0
-          ? `Account temporarily locked. Try again in ${ttl} seconds.`
-          : "Account temporarily locked."
-      );
+      if (isBlocked) {
+        const ttl = await this.redisService.client.ttl(blockKey);
+        throw new UnauthorizedException(
+          ttl > 0
+            ? `Account temporarily locked. Try again in ${ttl} seconds.`
+            : "Account temporarily locked."
+        );
+      }
+    } catch (err) {
+      // If Redis fails (rate limit, network), don't block login flow — log and continue
+      this.logger.warn(`Redis unavailable in ensureNotLocked: ${String(err)}`);
+      return;
     }
   }
 
   private async registerFailedAttempt(email: string, ip: string) {
     const attemptKey = this.loginAttemptKey(email, ip);
     const blockKey = this.loginBlockKey(email, ip);
+    try {
+      const attempts = await this.redisService.client.incr(attemptKey);
+      if (attempts === 1) {
+        await this.redisService.client.expire(attemptKey, this.lockoutDuration);
+      }
 
-    const attempts = await this.redisService.client.incr(attemptKey);
-    if (attempts === 1) {
-      await this.redisService.client.expire(attemptKey, this.lockoutDuration);
-    }
-
-    if (attempts >= this.maxLoginAttempts) {
-      await this.redisService.client.set(blockKey, "1", "EX", this.lockoutDuration);
-      await this.redisService.client.del(attemptKey);
+      if (attempts >= this.maxLoginAttempts) {
+        await this.redisService.client.set(blockKey, "1", "EX", this.lockoutDuration);
+        await this.redisService.client.del(attemptKey);
+      }
+    } catch (err) {
+      // Log and fail-open: if Redis can't be updated, don't prevent further login attempts
+      this.logger.warn(`Redis unavailable in registerFailedAttempt: ${String(err)}`);
+      return;
     }
   }
 
   private async clearLoginAttempts(email: string, ip: string) {
     const attemptKey = this.loginAttemptKey(email, ip);
     const blockKey = this.loginBlockKey(email, ip);
-    await this.redisService.client.del(attemptKey, blockKey);
+    try {
+      await this.redisService.client.del(attemptKey, blockKey);
+    } catch (err) {
+      // Log but don't fail logout/login flow if Redis cannot be cleared
+      this.logger.warn(`Redis unavailable in clearLoginAttempts: ${String(err)}`);
+      return;
+    }
   }
 
   private async persistRefreshToken(
