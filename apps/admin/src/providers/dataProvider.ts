@@ -3,11 +3,19 @@ import type { BaseRecord, CrudFilters, DataProvider, GetListResponse } from "@re
 import { studentQuerySchema } from "@shared/schemas";
 
 const sanitizeBaseUrl = (rawUrl?: string) => {
-  if (!rawUrl || rawUrl.trim().length === 0) {
-    return "http://localhost:3000/api/v1";
+  if (rawUrl && rawUrl.trim().length > 0) {
+    return rawUrl.replace(/\/+$/, "");
   }
 
-  return rawUrl.replace(/\/+$/, "");
+  try {
+    if (typeof window !== "undefined" && window?.location?.origin) {
+      return `${window.location.origin.replace(/\/+$/, "")}/api/v1`;
+    }
+  } catch {
+    // ignore
+  }
+
+  return "http://localhost:3000/api/v1";
 };
 
 const API_BASE_URL = sanitizeBaseUrl(import.meta.env.VITE_API_URL);
@@ -19,9 +27,32 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Log resolved base in browser runtime (non-sensitive)
+try {
+  if (typeof window !== "undefined") {
+    console.info("[dataProvider] Resolved API base:", API_BASE_URL);
+  }
+} catch {}
+
 // Add request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
+    try {
+      if (typeof window !== "undefined") {
+        const maskedHeaders = {
+          ...(config.headers && typeof config.headers === "object" ? config.headers : {}),
+        } as Record<string, unknown>;
+        if (maskedHeaders.Authorization || maskedHeaders.authorization) {
+          maskedHeaders.Authorization = "Bearer ••••";
+        }
+        console.info(
+          "[dataProvider] Request",
+          config.method?.toUpperCase?.() ?? config.method,
+          config.url,
+          { params: config.params, headers: maskedHeaders }
+        );
+      }
+    } catch {}
     const token = localStorage.getItem("access_token");
     if (token) {
       if (config.headers instanceof AxiosHeaders) {
