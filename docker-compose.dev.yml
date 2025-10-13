@@ -11,7 +11,10 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sma"]
+      # pg_isready by default tries to connect to a database with the same name
+      # as the user (sma). The DB created in this compose is `sma_dev`, so
+      # specify it explicitly to avoid repeated "database \"sma\" does not exist" logs.
+      test: ["CMD-SHELL", "pg_isready -U sma -d sma_dev"]
       interval: 5s
       timeout: 5s
       retries: 5

@@ -166,6 +166,31 @@ docker compose -f docker-compose.dev.yml up -d
 
 Gunakan `docker compose -f docker-compose.dev.yml down` untuk mematikannya. Data tersimpan di volume `postgres-data` dan `redis-data`.
 
+### Docker development helpers (quick)
+
+Saya menambahkan beberapa helper untuk memudahkan development lokal:
+
+- `docker-compose.seed.yml` — menjalankan seeder (`pnpm --filter @apps/api run seed`) di dalam container Node tanpa perlu menginstall pnpm secara lokal.
+- `docker-compose.dev.override.yml` — mengandung service untuk menjalankan API (dev) dan Admin (Vite) yang terhubung ke Postgres+Redis dari `docker-compose.dev.yml`.
+
+Contoh perintah cepat:
+
+```bash
+# Start Postgres + Redis
+pnpm compose:up
+
+# Run the repository seed (runs once and exits)
+pnpm compose:seed
+
+# Start API dev + Admin dev (builds API Dockerfile if present)
+pnpm compose:dev
+
+# Stop the compose stack
+pnpm compose:down
+```
+
+Catatan: scripts `compose:*` tersedia di `package.json` pada root.
+
 ## Alur deploy
 
 ### Admin (Vercel)
