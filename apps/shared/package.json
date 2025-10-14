@@ -1,43 +1,10 @@
 {
   "name": "@apps/shared",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./db/schema": {
-      "types": "./dist/db/schema.d.ts",
-      "import": "./dist/db/schema.js",
-      "require": "./dist/db/schema.js"
-    },
-    "./db/client": {
-      "types": "./dist/db/client.d.ts",
-      "import": "./dist/db/client.js",
-      "require": "./dist/db/client.js"
-    },
-    "./schemas": {
-      "types": "./dist/schemas/index.d.ts",
-      "import": "./dist/schemas/index.js",
-      "require": "./dist/schemas/index.js"
-    },
-    "./constants": {
-      "types": "./dist/constants/index.d.ts",
-      "import": "./dist/constants/index.js",
-      "require": "./dist/constants/index.js"
-    }
-  },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
-    "lint": "eslint \"src\"",
-    "test": "vitest",
-    "dev": "pnpm build --watch",
-    "format": "prettier --write src"
+    "test": "vitest --run",
+    "format": "prettier --write src/**/*.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.44.5",

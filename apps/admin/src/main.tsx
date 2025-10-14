@@ -20,6 +20,14 @@ import { RouteDebugger } from "./components/route-debugger";
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
 
+// Start MSW in development so the admin UI works when backend is down or rate-limited.
+if (import.meta.env.DEV) {
+  // lazy import so MSW isn't bundled into production build
+  void import("./mocks/browser").then(({ worker }) => {
+    worker.start({ onUnhandledRequest: "bypass" });
+  });
+}
+
 const queryClient = new QueryClient();
 
 const resources = [

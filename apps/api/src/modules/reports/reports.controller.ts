@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
-import { reportRequestSchema, type ReportRequestInput } from "@shared/schemas";
+import { reportRequestSchema, type ReportRequestInput } from "../../../../shared/src/schemas";
 import { ReportsService } from "./reports.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";

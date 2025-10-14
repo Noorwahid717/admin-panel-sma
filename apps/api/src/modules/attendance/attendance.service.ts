@@ -4,10 +4,16 @@ import type {
   AttendanceQueryInput,
   BulkAttendanceInput,
   CreateAttendanceRecordInput,
-} from "@shared/schemas";
-import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
-import type { Database } from "@shared/db/client";
-import { attendance, classes, enrollments, students, subjects, terms } from "@shared/db/schema";
+} from "../../../../shared/src/schemas";
+import type { Database } from "../../../../shared/src/db/client";
+import {
+  attendance,
+  classes,
+  enrollments,
+  students,
+  subjects,
+  terms,
+} from "../../../../shared/src/db/schema";
 import { nanoid } from "nanoid";
 import type { RequestUser } from "@api/auth/auth.types";
 import { OwnershipService } from "../../common/services/ownership.service";

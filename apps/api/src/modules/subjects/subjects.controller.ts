@@ -16,7 +16,7 @@ import {
   type CreateSubjectInput,
   type SubjectQuery,
   type UpdateSubjectInput,
-} from "@shared/schemas";
+} from "../../../../shared/src/schemas";
 import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
