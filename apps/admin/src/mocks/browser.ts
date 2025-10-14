@@ -37,26 +37,10 @@ export const worker = {
       }
     }
 
-    // Final fallback: try deep path to the built browser module
-    if (!setupWorkerFn || !restObj) {
-      try {
-        // @ts-ignore
-        const mswModule = await import("msw/lib/browser/index.mjs");
-        // eslint-disable-next-line no-console
-        console.debug("msw/lib/browser/index.mjs keys:", Object.keys(mswModule));
-        setupWorkerFn =
-          setupWorkerFn ??
-          (mswModule as any).setupWorker ??
-          (mswModule as any).default?.setupWorker;
-        restObj = restObj ?? (mswModule as any).rest ?? (mswModule as any).default?.rest;
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.debug(
-          "msw/lib/browser/index.mjs import failed:",
-          err instanceof Error ? err.message : String(err)
-        );
-      }
-    }
+    // Note: we intentionally avoid deep imports (e.g. msw/lib/...) because
+    // package.json export map may block them and Vite will error. If `rest`
+    // is not present after trying `msw/browser` and `msw`, handlers will
+    // start empty and a diagnostic will be logged.
 
     if (!setupWorkerFn) {
       // eslint-disable-next-line no-console
