@@ -3,9 +3,12 @@ import { Button, Result, Space, Spin, Table, Typography } from "antd";
 import type { AxiosError } from "axios";
 import type { ColumnsType } from "antd/es/table";
 import { List, useTable } from "@refinedev/antd";
-import { useResource, useNavigation, useDelete, useNotification } from "@refinedev/core";
+import { useResource, useNavigation, useDelete, useNotification, useCan } from "@refinedev/core";
 import { Space as AntdSpace } from "antd";
+import { RocketOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import { ConfirmModal } from "../components/confirm-modal";
+import { ResourceActionGuard } from "../components/resource-action-guard";
 
 const safeStringify = (value: unknown) => {
   try {
@@ -25,15 +28,39 @@ const formatTitle = (key: string) =>
 export const ResourceList = () => {
   const { resource } = useResource();
   const resourceName = resource?.name;
+  const resolvedResourceName = resourceName ?? resource?.identifier;
+  const navigate = useNavigate();
+
+  const metaCreateAllowed = resource?.meta?.canCreate ?? Boolean(resource?.create);
+  const metaEditAllowed = resource?.meta?.canEdit ?? Boolean(resource?.edit);
+  const metaShowAllowed = resource?.meta?.canShow ?? Boolean(resource?.show ?? true);
+  const metaDeleteAllowed = resource?.meta?.canDelete ?? true;
+
+  const { data: createPermission } = useCan(
+    { resource: resolvedResourceName ?? "", action: "create" },
+    { queryOptions: { enabled: Boolean(resolvedResourceName) } }
+  );
+  const { data: editPermission } = useCan(
+    { resource: resolvedResourceName ?? "", action: "edit" },
+    { queryOptions: { enabled: Boolean(resolvedResourceName) } }
+  );
+  const { data: showPermission } = useCan(
+    { resource: resolvedResourceName ?? "", action: "show" },
+    { queryOptions: { enabled: Boolean(resolvedResourceName) } }
+  );
+  const { data: deletePermission } = useCan(
+    { resource: resolvedResourceName ?? "", action: "delete" },
+    { queryOptions: { enabled: Boolean(resolvedResourceName) } }
+  );
 
   const { tableProps, tableQueryResult } = useTable({
-    resource: resourceName,
+    resource: resolvedResourceName,
     pagination: {
       current: 1,
       pageSize: 10,
     },
     queryOptions: {
-      enabled: Boolean(resourceName),
+      enabled: Boolean(resolvedResourceName),
     },
   });
 
@@ -100,6 +127,13 @@ export const ResourceList = () => {
     () => resource?.meta?.label ?? resource?.label ?? resource?.name ?? "Resource",
     [resource?.label, resource?.meta?.label, resource?.name]
   );
+
+  const canCreate = metaCreateAllowed && createPermission?.can !== false;
+  const canEdit = metaEditAllowed && editPermission?.can !== false;
+  const canShow = metaShowAllowed && showPermission?.can !== false;
+  const canDelete = metaDeleteAllowed && deletePermission?.can !== false;
+  const showSetupWizardLink = Boolean(resource?.meta?.showSetupWizardLink);
+  const showImportStatusLink = Boolean(resource?.meta?.showImportStatusLink);
 
   const resourceLabelLower = resourceLabel.toLocaleLowerCase("id-ID");
   const resourceEndpoint = resource?.name ? `/${resource.name}` : "-";
@@ -302,33 +336,46 @@ export const ResourceList = () => {
   // Append CRUD action column
   const columnsWithActions = useMemo(() => {
     const base = columns.slice();
+    if (!resolvedResourceName || (!canShow && !canEdit && !canDelete)) {
+      return base;
+    }
+
     base.push({
       title: "Aksi",
       key: "actions",
       width: 220,
       render: (_, record) => {
         const id = (record as any)?.id;
+        if (!id) {
+          return null;
+        }
         return (
           <AntdSpace>
-            <Button onClick={() => show(resourceName ?? "", String(id))}>Lihat</Button>
-            <Button onClick={() => edit(resourceName ?? "", String(id))}>Ubah</Button>
-            <Button
-              danger
-              loading={isDeleting}
-              onClick={() => {
-                setConfirmTarget({ id, resource: resourceName });
-                setConfirmVisible(true);
-              }}
-            >
-              Hapus
-            </Button>
+            {canShow ? (
+              <Button onClick={() => show(resolvedResourceName, String(id))}>Lihat</Button>
+            ) : null}
+            {canEdit ? (
+              <Button onClick={() => edit(resolvedResourceName, String(id))}>Ubah</Button>
+            ) : null}
+            {canDelete ? (
+              <Button
+                danger
+                loading={isDeleting}
+                onClick={() => {
+                  setConfirmTarget({ id, resource: resolvedResourceName });
+                  setConfirmVisible(true);
+                }}
+              >
+                Hapus
+              </Button>
+            ) : null}
           </AntdSpace>
         );
       },
     });
 
     return base;
-  }, [columns, resourceName, isDeleting, show, edit]);
+  }, [columns, resolvedResourceName, isDeleting, show, edit, canShow, canEdit, canDelete]);
 
   const tableLocale = useMemo(
     () => ({
@@ -370,36 +417,80 @@ export const ResourceList = () => {
   const tableLoadingProps = shouldShowSpinner ? { spinning: true, tip: "Memuat data..." } : false;
 
   return (
-    <>
-      <List
-        title={resource?.meta?.label ?? resource?.label ?? resource?.name}
-        resource={resourceName}
-        headerButtons={
-          <Button type="primary" onClick={() => create(resourceName ?? "")}>
-            Buat Baru
-          </Button>
-        }
-      >
-        {errorResult}
-        {!errorResult && (
-          <Table
-            {...restTableProps}
-            dataSource={dataSource}
-            columns={columnsWithActions}
-            loading={tableLoadingProps}
-            locale={tableLocale}
-            rowKey={(record) => (record as { id?: string | number }).id ?? JSON.stringify(record)}
-          />
-        )}
-      </List>
-      <ConfirmModal
-        open={confirmVisible}
-        title="Konfirmasi penghapusan"
-        content={<div>Anda yakin ingin menghapus item ini?</div>}
-        onOk={handleConfirmOk}
-        onCancel={handleConfirmCancel}
-        confirmLoading={isDeleting}
-      />
-    </>
+    <ResourceActionGuard action="list" resourceName={resolvedResourceName}>
+      <>
+        <List
+          title={resource?.meta?.label ?? resource?.label ?? resource?.name}
+          resource={resolvedResourceName}
+          headerButtons={(() => {
+            const actions: React.ReactNode[] = [];
+            if (showSetupWizardLink) {
+              actions.push(
+                <Button key="setup" icon={<RocketOutlined />} onClick={() => navigate("/setup")}>
+                  Wizard Pra-Semester
+                </Button>
+              );
+            }
+            if (resource?.meta?.showGradeConfigLink) {
+              actions.push(
+                <Button key="grade-config" onClick={() => navigate("/grade-configs")}>
+                  Konfigurasi Nilai
+                </Button>
+              );
+            }
+            if (resource?.name === "attendance") {
+              actions.push(
+                <Button key="daily" onClick={() => navigate("/attendance/daily")}>
+                  Absensi Harian
+                </Button>
+              );
+              actions.push(
+                <Button key="lesson" onClick={() => navigate("/attendance/lesson")}>
+                  Absensi Mapel
+                </Button>
+              );
+            }
+            if (canCreate && resolvedResourceName) {
+              actions.push(
+                <Button key="create" type="primary" onClick={() => create(resolvedResourceName)}>
+                  Buat Baru
+                </Button>
+              );
+            }
+            if (showImportStatusLink) {
+              actions.push(
+                <Button key="import-status" onClick={() => navigate("/setup/import-status")}>
+                  Status Import
+                </Button>
+              );
+            }
+            if (actions.length === 0) {
+              return undefined;
+            }
+            return <Space>{actions}</Space>;
+          })()}
+        >
+          {errorResult}
+          {!errorResult && (
+            <Table
+              {...restTableProps}
+              dataSource={dataSource}
+              columns={columnsWithActions}
+              loading={tableLoadingProps}
+              locale={tableLocale}
+              rowKey={(record) => (record as { id?: string | number }).id ?? JSON.stringify(record)}
+            />
+          )}
+        </List>
+        <ConfirmModal
+          open={confirmVisible}
+          title="Konfirmasi penghapusan"
+          content={<div>Anda yakin ingin menghapus item ini?</div>}
+          onOk={handleConfirmOk}
+          onCancel={handleConfirmCancel}
+          confirmLoading={isDeleting}
+        />
+      </>
+    </ResourceActionGuard>
   );
 };

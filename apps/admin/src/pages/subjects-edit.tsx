@@ -1,14 +1,14 @@
 import React from "react";
-import { Create, useForm } from "@refinedev/antd";
-import { Form, Input, Card } from "antd";
+import { Edit, useForm } from "@refinedev/antd";
+import { Card, Form, Input } from "antd";
 import { ResourceActionGuard } from "../components/resource-action-guard";
 
-export const SubjectsCreate: React.FC = () => {
+export const SubjectsEdit: React.FC = () => {
   const { formProps, saveButtonProps } = useForm();
 
   return (
-    <ResourceActionGuard action="create">
-      <Create saveButtonProps={saveButtonProps} title="Buat Subject">
+    <ResourceActionGuard action="edit">
+      <Edit saveButtonProps={saveButtonProps} title="Ubah Mata Pelajaran">
         <Card>
           <Form {...formProps} layout="vertical">
             <Form.Item
@@ -23,7 +23,7 @@ export const SubjectsCreate: React.FC = () => {
             </Form.Item>
           </Form>
         </Card>
-      </Create>
+      </Edit>
     </ResourceActionGuard>
   );
 };

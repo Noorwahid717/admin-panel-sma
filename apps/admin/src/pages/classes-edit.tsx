@@ -1,14 +1,14 @@
 import React from "react";
-import { Create, useForm } from "@refinedev/antd";
+import { Edit, useForm } from "@refinedev/antd";
 import { Card, Form, Input, InputNumber } from "antd";
 import { ResourceActionGuard } from "../components/resource-action-guard";
 
-export const ClassesCreate: React.FC = () => {
+export const ClassesEdit: React.FC = () => {
   const { formProps, saveButtonProps } = useForm();
 
   return (
-    <ResourceActionGuard action="create">
-      <Create saveButtonProps={saveButtonProps} title="Buat Kelas">
+    <ResourceActionGuard action="edit">
+      <Edit saveButtonProps={saveButtonProps} title="Ubah Kelas">
         <Card>
           <Form {...formProps} layout="vertical">
             <Form.Item label="Nama Kelas" name="name" rules={[{ required: true }]}>
@@ -18,6 +18,13 @@ export const ClassesCreate: React.FC = () => {
               label="Tingkat"
               name="level"
               rules={[{ required: true, message: "Tingkat kelas wajib diisi" }]}
+              getValueProps={(value: unknown) => {
+                if (typeof value === "number") {
+                  return { value };
+                }
+                const parsed = Number(value);
+                return { value: Number.isNaN(parsed) ? undefined : parsed };
+              }}
             >
               <InputNumber
                 min={10}
@@ -31,7 +38,7 @@ export const ClassesCreate: React.FC = () => {
             </Form.Item>
           </Form>
         </Card>
-      </Create>
+      </Edit>
     </ResourceActionGuard>
   );
 };

@@ -1,0 +1,42 @@
+# Implementation Checklist
+
+- [ ] Inisialisasi repo monorepo (apps: api, web, worker)
+- [ ] Skema DB & migrasi awal; seed data contoh
+- [ ] Konfigurasi ENV (DB, REDIS, SMTP, WA provider dummy)
+- [ ] RBAC + guard + audit log interceptor (frontend guard selesai; backend pending)
+- [ ] Swagger & Postman collection
+- [ ] CRUD Tahun Ajar & Term + status
+- [ ] Impor siswa (CSV) + validasi unik & laporan error (UI mock ready)
+- [ ] Idempotensi impor siswa
+- [ ] Impor guru (CSV) + validasi (UI mock ready)
+- [ ] CRUD Kelas + assign Wali Kelas (wizard mock ready)
+- [ ] Master Mapel; mapping Mapel ↔ Kelas ↔ Guru (wizard mock ready)
+- [ ] Jadwal manual & generator + konflik (wizard mock ready)
+- [ ] Akun & kredensial: pembuatan user + notifikasi
+- [x] UI wizard setup pra-semester (upload CSV; pratinjau)
+- [x] Absensi harian Wali Kelas (with persistence, history, export)
+- [x] Absensi per jam Guru Mapel (with persistence, history, export)
+- [ ] Worker notifikasi ortu (A > X)
+- [x] GradeConfig + GradeItem + GradeScore + kalkulasi
+- [x] Pengumuman & dashboard audience
+- [x] Catatan perilaku tagging
+- [x] Validasi skema weighted/average
+- [x] Penetapan KKM & bobot finalisasi
+- [ ] Finalisasi guru & verifikasi wali
+- [ ] Batch rapor PDF worker
+- [ ] Dashboard Kepsek (distribusi, outlier, remedial)
+- [ ] Mutasi masuk/keluar & audit trail
+- [ ] Arsip rapor & absensi (PDF/CSV)
+- [ ] Mutasi keluar → tidak muncul absensi
+- [ ] Arsip CSV round-trip
+- [ ] Audit log merekam aktor/perubahan
+- [ ] Logging JSON + correlation id
+- [ ] Health checks API/Worker/Redis
+- [ ] Backup & restore percobaan
+- [ ] Rate limit & kebijakan password
+- [ ] README dev + arsitektur + deploy
+- [ ] SOP pengguna (PDF)
+- [ ] Jadwal overlap test
+- [ ] Nilai weighted test
+- [ ] Notifikasi A>X test
+- [ ] Mutasi tengah semester test

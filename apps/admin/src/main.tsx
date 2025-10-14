@@ -16,14 +16,35 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { resolveDataProvider } from "./providers/dataProvider";
 import { authProvider } from "./providers/authProvider";
+import { accessControlProvider } from "./providers/accessControlProvider";
 import { ResourceList } from "./pages/resource-list";
 import { LoginPage } from "./pages/login";
 import { RouteDebugger } from "./components/route-debugger";
 import { StudentsCreate } from "./pages/students-create";
 import { StudentsEdit } from "./pages/students-edit";
 import { TeachersCreate } from "./pages/teachers-create";
+import { TeachersEdit } from "./pages/teachers-edit";
 import { ClassesCreate } from "./pages/classes-create";
+import { ClassesEdit } from "./pages/classes-edit";
 import { SubjectsCreate } from "./pages/subjects-create";
+import { SubjectsEdit } from "./pages/subjects-edit";
+import { TermsCreate } from "./pages/terms-create";
+import { TermsEdit } from "./pages/terms-edit";
+import { EnrollmentsCreate } from "./pages/enrollments-create";
+import { EnrollmentsEdit } from "./pages/enrollments-edit";
+import { GradeComponentsCreate } from "./pages/grade-components-create";
+import { GradeComponentsEdit } from "./pages/grade-components-edit";
+import { GradesEdit } from "./pages/grades-edit";
+import { GradeConfigPage } from "./pages/grade-config";
+import { AttendanceCreate } from "./pages/attendance-create";
+import { AttendanceEdit } from "./pages/attendance-edit";
+import { AttendanceDailyPage } from "./pages/attendance-daily";
+import { AttendanceLessonPage } from "./pages/attendance-lesson";
+import { ResourceShow } from "./pages/resource-show";
+import { SetupWizard } from "./pages/setup-wizard";
+import { ImportStatusPage } from "./pages/import-status";
+import { AnnouncementsPage } from "./pages/announcements";
+import { BehaviorNotesPage } from "./pages/behavior-notes";
 
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
@@ -33,16 +54,198 @@ import "antd/dist/reset.css";
 const queryClient = new QueryClient();
 
 const resources = [
-  { name: "students", list: "/students", meta: { label: "Students" } },
-  { name: "teachers", list: "/teachers", meta: { label: "Teachers" } },
-  { name: "classes", list: "/classes", meta: { label: "Classes" } },
-  { name: "subjects", list: "/subjects", meta: { label: "Subjects" } },
-  { name: "terms", list: "/terms", meta: { label: "Terms" } },
-  { name: "enrollments", list: "/enrollments", meta: { label: "Enrollments" } },
-  { name: "grade-components", list: "/grade-components", meta: { label: "Grade Components" } },
-  { name: "grades", list: "/grades", meta: { label: "Grades" } },
-  { name: "attendance", list: "/attendance", meta: { label: "Attendance" } },
+  {
+    name: "students",
+    list: "/students",
+    create: "/students/create",
+    edit: "/students/edit/:id",
+    show: "/students/show/:id",
+    meta: {
+      label: "Students",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      showSetupWizardLink: true,
+      showImportStatusLink: true,
+    },
+  },
+  {
+    name: "teachers",
+    list: "/teachers",
+    create: "/teachers/create",
+    edit: "/teachers/edit/:id",
+    show: "/teachers/show/:id",
+    meta: {
+      label: "Teachers",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      showImportStatusLink: true,
+    },
+  },
+  {
+    name: "classes",
+    list: "/classes",
+    create: "/classes/create",
+    edit: "/classes/edit/:id",
+    show: "/classes/show/:id",
+    meta: { label: "Classes", canCreate: true, canEdit: true, canDelete: true, canShow: true },
+  },
+  {
+    name: "subjects",
+    list: "/subjects",
+    create: "/subjects/create",
+    edit: "/subjects/edit/:id",
+    show: "/subjects/show/:id",
+    meta: { label: "Subjects", canCreate: true, canEdit: true, canDelete: true, canShow: true },
+  },
+  {
+    name: "terms",
+    list: "/terms",
+    create: "/terms/create",
+    edit: "/terms/edit/:id",
+    show: "/terms/show/:id",
+    meta: {
+      label: "Terms",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      showSetupWizardLink: true,
+    },
+  },
+  {
+    name: "enrollments",
+    list: "/enrollments",
+    create: "/enrollments/create",
+    edit: "/enrollments/edit/:id",
+    show: "/enrollments/show/:id",
+    meta: { label: "Enrollments", canCreate: true, canEdit: true, canDelete: true, canShow: true },
+  },
+  {
+    name: "grade-components",
+    list: "/grade-components",
+    create: "/grade-components/create",
+    edit: "/grade-components/edit/:id",
+    show: "/grade-components/show/:id",
+    meta: {
+      label: "Grade Components",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      showGradeConfigLink: true,
+    },
+  },
+  {
+    name: "grades",
+    list: "/grades",
+    edit: "/grades/edit/:id",
+    show: "/grades/show/:id",
+    meta: { label: "Grades", canCreate: false, canEdit: true, canDelete: true, canShow: true },
+  },
+  {
+    name: "grade-configs",
+    list: "/grade-configs",
+    meta: {
+      label: "Grade Config",
+      canCreate: false,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+    },
+  },
+  {
+    name: "announcements",
+    list: "/announcements",
+    meta: {
+      label: "Announcements",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+    },
+  },
+  {
+    name: "behavior-notes",
+    list: "/behavior-notes",
+    meta: {
+      label: "Catatan Perilaku",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+    },
+  },
+  {
+    name: "grade-configs",
+    list: "/grade-configs",
+    meta: {
+      label: "Grade Config",
+      canCreate: false,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+    },
+  },
+  {
+    name: "attendance",
+    list: "/attendance",
+    create: "/attendance/create",
+    edit: "/attendance/edit/:id",
+    show: "/attendance/show/:id",
+    meta: { label: "Attendance", canCreate: true, canEdit: true, canDelete: true, canShow: true },
+  },
 ] as const;
+
+const resourceRouteConfig: Record<
+  (typeof resources)[number]["name"],
+  {
+    create?: React.ReactNode;
+    edit?: React.ReactNode;
+  }
+> = {
+  students: {
+    create: <StudentsCreate />,
+    edit: <StudentsEdit />,
+  },
+  teachers: {
+    create: <TeachersCreate />,
+    edit: <TeachersEdit />,
+  },
+  classes: {
+    create: <ClassesCreate />,
+    edit: <ClassesEdit />,
+  },
+  subjects: {
+    create: <SubjectsCreate />,
+    edit: <SubjectsEdit />,
+  },
+  terms: {
+    create: <TermsCreate />,
+    edit: <TermsEdit />,
+  },
+  enrollments: {
+    create: <EnrollmentsCreate />,
+    edit: <EnrollmentsEdit />,
+  },
+  "grade-components": {
+    create: <GradeComponentsCreate />,
+    edit: <GradeComponentsEdit />,
+  },
+  "grade-configs": {},
+  announcements: {},
+  "behavior-notes": {},
+  grades: {
+    edit: <GradesEdit />,
+  },
+  attendance: {
+    create: <AttendanceCreate />,
+    edit: <AttendanceEdit />,
+  },
+};
 
 const dataProvider = resolveDataProvider();
 
@@ -106,11 +309,15 @@ async function bootstrap() {
               <Refine
                 dataProvider={dataProvider}
                 authProvider={authProvider}
+                accessControlProvider={accessControlProvider}
                 notificationProvider={notificationProvider}
                 routerProvider={routerProvider}
-                resources={resources.map(({ name, list, meta }) => ({
+                resources={resources.map(({ name, list, create, edit, show, meta }) => ({
                   name,
                   list,
+                  create,
+                  edit,
+                  show,
                   meta,
                 }))}
                 options={{
@@ -129,25 +336,43 @@ async function bootstrap() {
                     <Route index element={<NavigateToResource resource={resources[0].name} />} />
                     {resources.map((resource) => (
                       <Route key={resource.name} path={resource.name}>
-                        <Route index element={<ResourceList />} />
-                        {/* Resource-specific pages (some implemented) */}
-                        {resource.name === "students" && (
+                        <Route
+                          index
+                          element={
+                            resource.name === "grade-configs" ? (
+                              <GradeConfigPage />
+                            ) : resource.name === "announcements" ? (
+                              <AnnouncementsPage />
+                            ) : resource.name === "behavior-notes" ? (
+                              <BehaviorNotesPage />
+                            ) : (
+                              <ResourceList />
+                            )
+                          }
+                        />
+                        {resourceRouteConfig[resource.name]?.create ? (
+                          <Route
+                            path="create"
+                            element={resourceRouteConfig[resource.name]!.create}
+                          />
+                        ) : null}
+                        {resourceRouteConfig[resource.name]?.edit ? (
+                          <Route
+                            path="edit/:id"
+                            element={resourceRouteConfig[resource.name]!.edit}
+                          />
+                        ) : null}
+                        <Route path="show/:id" element={<ResourceShow />} />
+                        {resource.name === "attendance" ? (
                           <>
-                            <Route path="create" element={<StudentsCreate />} />
-                            <Route path=":id" element={<StudentsEdit />} />
+                            <Route path="daily" element={<AttendanceDailyPage />} />
+                            <Route path="lesson" element={<AttendanceLessonPage />} />
                           </>
-                        )}
-                        {resource.name === "teachers" && (
-                          <Route path="create" element={<TeachersCreate />} />
-                        )}
-                        {resource.name === "classes" && (
-                          <Route path="create" element={<ClassesCreate />} />
-                        )}
-                        {resource.name === "subjects" && (
-                          <Route path="create" element={<SubjectsCreate />} />
-                        )}
+                        ) : null}
                       </Route>
                     ))}
+                    <Route path="setup" element={<SetupWizard />} />
+                    <Route path="setup/import-status" element={<ImportStatusPage />} />
                   </Route>
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="*" element={<ErrorComponent />} />
