@@ -11,6 +11,20 @@ import { ThemedLayoutV2, ErrorComponent, notificationProvider } from "@refinedev
 import { ConfigProvider, App as AntdApp, theme } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+// Start MSW in development to mock API requests. This is a lazy import so
+// the mocks are only bundled/loaded during development.
+if (import.meta.env.DEV) {
+  void import("./mocks/browser").then(({ startWorker }) => {
+    // start with default options; you can pass { serviceWorker: { url: '/mockServiceWorker.js' } }
+    // if you generated the worker into a different public path.
+    startWorker({ onUnhandledRequest: "bypass" }).catch((err: unknown) => {
+      // Non-fatal: log the error but don't break the app
+      // eslint-disable-next-line no-console
+      console.warn("MSW failed to start:", err instanceof Error ? err.message : String(err));
+    });
+  });
+}
+
 import { resolveDataProvider } from "./providers/dataProvider";
 import { authProvider } from "./providers/authProvider";
 import { ResourceList } from "./pages/resource-list";
