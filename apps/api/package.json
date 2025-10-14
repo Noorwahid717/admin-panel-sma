@@ -3,20 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "main": "dist/main.js",
+  "main": "dist/api/src/main.js",
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "dev": "nest start --watch --preserveWatchOutput -r tsconfig-paths/register",
-    "start": "node dist/main.js",
-    "start:prod": "NODE_ENV=production node dist/main.js",
+    "dev": "ts-node -r tsconfig-paths/register src/main.ts",
+    "start": "node dist/api/src/main.js",
+    "start:prod": "NODE_ENV=production node dist/api/src/main.js",
     "lint": "eslint \"src\"",
     "test": "vitest --run",
     "test:e2e": "vitest --run -c vitest.e2e.config.ts",
     "migrate:generate": "drizzle-kit generate",
     "migrate:push": "drizzle-kit push",
-    "seed": "tsx --tsconfig tsconfig.json src/db/seed.ts",
-    "db:reset": "drizzle-kit push --force && tsx --tsconfig tsconfig.json src/db/seed.ts"
+    "seed": "tsx src/db/seed.ts",
+    "db:reset": "drizzle-kit push --force && tsx src/db/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.896.0",
@@ -75,7 +75,6 @@
     "@vitest/coverage-v8": "3.2.4",
     "pg-mem": "3.0.5",
     "vitest": "3.2.4",
-    "vite-tsconfig-paths": "4.3.2",
-    "tsconfig-paths": "^4.2.0"
+    "vite-tsconfig-paths": "4.3.2"
   }
 }

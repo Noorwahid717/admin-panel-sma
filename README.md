@@ -69,6 +69,37 @@ Package ini di-build sebagai ES Modules (ESM) agar kompatibel dengan Vite dan bu
 
 5. **Mulai pengembangan** `pnpm dev`.
 
+## MSW (Mock Service Worker) — Development & Tests
+
+Untuk mempercepat pengembangan frontend tanpa tergantung backend, repo ini mengintegrasikan MSW (Mock Service Worker) di aplikasi `@apps/admin`.
+
+- Service worker sudah di-generate dan disimpan di: `apps/admin/public/mockServiceWorker.js` (committed). Aplikasi admin mendaftarkan worker tersebut otomatis hanya saat development — tidak perlu mengubah kode untuk memulai mocks.
+- Jika Anda ingin meregenerasi worker lokal (misalnya setelah upgrade msw): jalankan dari root repo:
+
+```bash
+# gunakan bin msw dari workspace admin
+pnpm --filter @apps/admin exec msw init ./apps/admin/public --save
+```
+
+- Catatan: jika Anda menggunakan `npx msw init`, jalankan dari root repo agar file ditempatkan di `apps/admin/public`.
+
+- Mock handlers berada di `apps/admin/src/mocks/handlers.ts` dan worker bootstrap ada di `apps/admin/src/mocks/browser.ts`.
+
+- Untuk testing unit/integration, Vitest sudah dikonfigurasi untuk memuat setup file yang men-start MSW server (node):
+
+  - Setup file: `apps/admin/test/setupTests.ts` (menggunakan `msw/node` dengan lifecycle hooks `beforeAll/afterEach/afterAll`).
+  - Jalankan tests untuk paket admin:
+
+  ```bash
+  pnpm --filter @apps/admin test
+  # atau dengan vitest langsung
+  pnpm --filter @apps/admin exec vitest --run
+  ```
+
+- Jika tim ingin menghindari commit file worker biner, Anda dapat menghapus `apps/admin/public/mockServiceWorker.js` dari repo dan minta tiap developer menjalankan perintah `msw init` lokal saat cloning. Keduanya valid; repo saat ini menyertakan worker agar developer tidak perlu langkah tambahan.
+
+## Konfigurasi environment
+
 ## Konfigurasi environment
 
 ### Root `.env`
@@ -165,6 +196,31 @@ docker compose -f docker-compose.dev.yml up -d
 ```
 
 Gunakan `docker compose -f docker-compose.dev.yml down` untuk mematikannya. Data tersimpan di volume `postgres-data` dan `redis-data`.
+
+### Docker development helpers (quick)
+
+Saya menambahkan beberapa helper untuk memudahkan development lokal:
+
+- `docker-compose.seed.yml` — menjalankan seeder (`pnpm --filter @apps/api run seed`) di dalam container Node tanpa perlu menginstall pnpm secara lokal.
+- `docker-compose.dev.override.yml` — mengandung service untuk menjalankan API (dev) dan Admin (Vite) yang terhubung ke Postgres+Redis dari `docker-compose.dev.yml`.
+
+Contoh perintah cepat:
+
+```bash
+# Start Postgres + Redis
+pnpm compose:up
+
+# Run the repository seed (runs once and exits)
+pnpm compose:seed
+
+# Start API dev + Admin dev (builds API Dockerfile if present)
+pnpm compose:dev
+
+# Stop the compose stack
+pnpm compose:down
+```
+
+Catatan: scripts `compose:*` tersedia di `package.json` pada root.
 
 ## Alur deploy
 

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  seed:
+    image: node:20-bullseye
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace:cached
+    environment:
+      # When used together with docker-compose.dev.yml the hostnames below resolve to the services
+      - DATABASE_URL=postgres://sma:sma@postgres:5432/sma_dev
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=development
+    depends_on:
+      - postgres
+      - redis
+    command:
+      - bash
+      - -lc
+      - |
+        # ensure pnpm is available (some node images don't include corepack)
+        npm install -g pnpm@latest && \
+        cd /workspace/apps/api && \
+        pnpm install --frozen-lockfile --filter @apps/api... || pnpm install --filter @apps/api... && \
+        pnpm run seed
+
+# Note: this file is intended to be used together with docker-compose.dev.yml:
+# docker compose -f docker-compose.dev.yml -f docker-compose.seed.yml up --abort-on-container-exit --exit-code-from seed
+# The seed service will run once and then exit. Use -d if you prefer to keep it running in the background.

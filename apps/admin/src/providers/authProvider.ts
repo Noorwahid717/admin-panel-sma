@@ -1,14 +1,34 @@
 import type { AuthProvider } from "@refinedev/core";
 
 const sanitizeBaseUrl = (rawUrl?: string) => {
-  if (!rawUrl || rawUrl.trim().length === 0) {
-    return "http://localhost:3000/api/v1";
+  // Prefer explicit env var when provided
+  if (rawUrl && rawUrl.trim().length > 0) {
+    return rawUrl.replace(/\/+$/, "");
   }
 
-  return rawUrl.replace(/\/+$/, "");
+  // If running in a browser at runtime, derive API base from current origin
+  try {
+    if (typeof window !== "undefined" && window?.location?.origin) {
+      return `${window.location.origin.replace(/\/+$/, "")}/api/v1`;
+    }
+  } catch {
+    // ignore and fall through to localhost
+  }
+
+  // Fallback for build-time / non-browser environments
+  return "http://localhost:3000/api/v1";
 };
 
 const API_URL = sanitizeBaseUrl(import.meta.env.VITE_API_URL);
+
+// Expose resolved API URL in console so we can verify runtime base in production
+try {
+  if (typeof window !== "undefined") {
+    console.info("[authProvider] Resolved API base:", API_URL);
+  }
+} catch {
+  // noop
+}
 
 const resolveEndpoint = (path: string) => `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
@@ -96,7 +116,14 @@ const normalizeTokens = (tokens: TokenResponse | null | undefined) => {
 export const authProvider: AuthProvider = {
   login: async ({ email, password }: LoginParams) => {
     try {
-      const response = await fetch(resolveEndpoint("auth/login"), {
+      const url = resolveEndpoint("auth/login");
+
+      // Log the outgoing login attempt (mask password)
+      try {
+        console.info("[authProvider] POST", url, { email, password: "••••" });
+      } catch {}
+
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -114,6 +141,19 @@ export const authProvider: AuthProvider = {
       }
 
       const body: TokenResponse = await response.json();
+
+      // Log a short summary of the auth response but do not print tokens
+      try {
+        const preview = {
+          ok: response.ok,
+          status: response.status,
+          hasUser: Boolean(body && (body as any).user),
+          hasAccessToken:
+            Boolean(body && (body as any).accessToken) ||
+            Boolean(body && (body as any).access_token),
+        };
+        console.info("[authProvider] login response summary:", preview);
+      } catch {}
       const normalizedTokens = normalizeTokens(body ?? null);
 
       if (!normalizedTokens) {
