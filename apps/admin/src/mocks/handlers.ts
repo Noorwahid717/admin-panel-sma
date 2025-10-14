@@ -51,44 +51,16 @@ export function setSimulation({
 }
 
 export async function createHandlers(rest?: any) {
-  // Ensure `rest` is available; accept either rest passed in or dynamically import msw
+  // Expect the browser bootstrap to pass the `rest` helper. If not provided,
+  // avoid dynamic imports (they caused deep-import resolution issues with Vite)
+  // and return an empty handler set so the worker can still start.
   if (!rest) {
-    // Try multiple import locations because bundlers may expose different module shapes.
-    const candidates = [
-      "msw",
-      "msw/browser",
-      "msw/lib/core/index.mjs",
-      "msw/lib/browser/index.mjs",
-    ];
-    for (const spec of candidates) {
-      try {
-        // @ts-ignore
-        const mod = await import(spec);
-        // eslint-disable-next-line no-console
-        console.debug(`msw import from ${spec}:`, Object.keys(mod));
-        rest = (mod as any).rest ?? (mod as any).default?.rest ?? rest;
-        if (rest) break;
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.debug(
-          `msw import ${spec} failed:`,
-          err instanceof Error ? err.message : String(err)
-        );
-      }
-    }
-  }
-
-  if (!rest) {
-    // If rest is still unavailable, log a clear warning and return an empty handler list
-    // to avoid throwing during bootstrap. This will make MSW start (service worker)
-    // but without request handlers — easier to diagnose from the console.
     // eslint-disable-next-line no-console
     console.error(
-      "MSW: could not find 'rest' helper after trying multiple import paths. MSW will start without handlers."
+      "MSW: 'rest' helper not provided to createHandlers — returning empty handlers. Ensure browser.ts forwards rest."
     );
     return [];
   }
-
   const authLoginRegex = /\/api(?:\/v1)?\/auth\/login$/;
   const authMeRegex = /\/api(?:\/v1)?\/auth\/me$/;
   const authLogoutRegex = /\/api(?:\/v1)?\/auth\/logout$/;
