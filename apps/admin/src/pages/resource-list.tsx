@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Result, Space, Spin, Table, Typography } from "antd";
 import type { AxiosError } from "axios";
 import type { ColumnsType } from "antd/es/table";
 import { List, useTable } from "@refinedev/antd";
-import { useResource } from "@refinedev/core";
+import { useResource, useNavigation, useDelete, useNotification } from "@refinedev/core";
+import { Space as AntdSpace } from "antd";
+import { ConfirmModal } from "../components/confirm-modal";
 
 const safeStringify = (value: unknown) => {
   try {
@@ -101,6 +103,50 @@ export const ResourceList = () => {
 
   const resourceLabelLower = resourceLabel.toLocaleLowerCase("id-ID");
   const resourceEndpoint = resource?.name ? `/${resource.name}` : "-";
+
+  const { create, edit, show } = useNavigation();
+  const { mutate: deleteOne, isLoading: isDeleting } = useDelete();
+  const { open: notifyOpen } = useNotification();
+
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<{
+    id?: string | number;
+    resource?: string;
+  } | null>(null);
+
+  const handleConfirmOk = () => {
+    if (!confirmTarget?.resource || !confirmTarget?.id) {
+      setConfirmVisible(false);
+      return;
+    }
+    deleteOne(
+      { resource: confirmTarget.resource, id: String(confirmTarget.id) },
+      {
+        onSuccess: () => {
+          notifyOpen?.({
+            type: "success",
+            message: "Berhasil",
+            description: "Data berhasil dihapus.",
+          });
+          refetch?.();
+          setConfirmTarget(null);
+        },
+        onError: (error: any) => {
+          notifyOpen?.({
+            type: "error",
+            message: "Gagal",
+            description: error?.message ?? "Gagal menghapus data.",
+          });
+        },
+      }
+    );
+    setConfirmVisible(false);
+  };
+
+  const handleConfirmCancel = () => {
+    setConfirmVisible(false);
+    setConfirmTarget(null);
+  };
 
   const errorResult = useMemo(() => {
     if (!isError) {
@@ -253,6 +299,37 @@ export const ResourceList = () => {
     }));
   }, [dataSource, tableQueryResult?.data?.data]);
 
+  // Append CRUD action column
+  const columnsWithActions = useMemo(() => {
+    const base = columns.slice();
+    base.push({
+      title: "Aksi",
+      key: "actions",
+      width: 220,
+      render: (_, record) => {
+        const id = (record as any)?.id;
+        return (
+          <AntdSpace>
+            <Button onClick={() => show(resourceName ?? "", String(id))}>Lihat</Button>
+            <Button onClick={() => edit(resourceName ?? "", String(id))}>Ubah</Button>
+            <Button
+              danger
+              loading={isDeleting}
+              onClick={() => {
+                setConfirmTarget({ id, resource: resourceName });
+                setConfirmVisible(true);
+              }}
+            >
+              Hapus
+            </Button>
+          </AntdSpace>
+        );
+      },
+    });
+
+    return base;
+  }, [columns, resourceName, isDeleting, show, edit]);
+
   const tableLocale = useMemo(
     () => ({
       emptyText: showLoadingState ? (
@@ -293,21 +370,36 @@ export const ResourceList = () => {
   const tableLoadingProps = shouldShowSpinner ? { spinning: true, tip: "Memuat data..." } : false;
 
   return (
-    <List
-      title={resource?.meta?.label ?? resource?.label ?? resource?.name}
-      resource={resourceName}
-    >
-      {errorResult}
-      {!errorResult && (
-        <Table
-          {...restTableProps}
-          dataSource={dataSource}
-          columns={columns}
-          loading={tableLoadingProps}
-          locale={tableLocale}
-          rowKey={(record) => (record as { id?: string | number }).id ?? JSON.stringify(record)}
-        />
-      )}
-    </List>
+    <>
+      <List
+        title={resource?.meta?.label ?? resource?.label ?? resource?.name}
+        resource={resourceName}
+        headerButtons={
+          <Button type="primary" onClick={() => create(resourceName ?? "")}>
+            Buat Baru
+          </Button>
+        }
+      >
+        {errorResult}
+        {!errorResult && (
+          <Table
+            {...restTableProps}
+            dataSource={dataSource}
+            columns={columnsWithActions}
+            loading={tableLoadingProps}
+            locale={tableLocale}
+            rowKey={(record) => (record as { id?: string | number }).id ?? JSON.stringify(record)}
+          />
+        )}
+      </List>
+      <ConfirmModal
+        open={confirmVisible}
+        title="Konfirmasi penghapusan"
+        content={<div>Anda yakin ingin menghapus item ini?</div>}
+        onOk={handleConfirmOk}
+        onCancel={handleConfirmCancel}
+        confirmLoading={isDeleting}
+      />
+    </>
   );
 };

@@ -53,10 +53,12 @@ export const worker = {
       console.warn("MSW: could not find 'rest' export on msw modules; handlers may be empty");
     }
 
-    // Import handlers factory and pass the discovered rest helper (may be undefined)
+    // Import handlers factory. Handlers now statically import `rest` from
+    // msw, so we don't need to forward the helper from here. This avoids
+    // runtime shape detection issues across different bundlers.
     // @ts-ignore
     const { createHandlers } = await import("./handlers");
-    const handlers = await createHandlers(restObj);
+    const handlers = await createHandlers();
     const w = setupWorkerFn(...(Array.isArray(handlers) ? handlers : []));
     return w.start(opts as any).then(() => {
       // Confirm worker started in the browser console for easier debugging

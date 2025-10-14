@@ -1,5 +1,15 @@
 import axios, { AxiosHeaders, type AxiosResponse } from "axios";
-import type { BaseRecord, CrudFilters, DataProvider, GetListResponse } from "@refinedev/core";
+import type {
+  BaseRecord,
+  CrudFilters,
+  DataProvider,
+  GetListResponse,
+  GetOneResponse,
+  CreateResponse,
+  UpdateResponse,
+  DeleteOneResponse,
+  GetManyResponse,
+} from "@refinedev/core";
 import { studentQuerySchema } from "@shared/schemas";
 
 const sanitizeBaseUrl = (rawUrl?: string) => {
@@ -85,6 +95,9 @@ api.interceptors.response.use(
       window.location.href = "/login";
     }
     return Promise.reject(error);
+    // --- DEV in-memory store -------------------------------------------------
+    // Keep the development store close to the dataProvider so CRUD methods can
+    // operate on the same fixtures used by getList when the backend is offline.
   }
 );
 
@@ -151,10 +164,7 @@ const extractListPayload = <TData extends BaseRecord = BaseRecord>(
   const payload = response.data as Record<string, unknown> | unknown[] | undefined;
 
   if (Array.isArray(payload)) {
-    return {
-      data: payload as TData[],
-      total: payload.length,
-    };
+    return { data: payload as TData[], total: payload.length };
   }
 
   if (payload && typeof payload === "object") {
@@ -167,21 +177,18 @@ const extractListPayload = <TData extends BaseRecord = BaseRecord>(
     if (Array.isArray(candidates)) {
       return {
         data: candidates as TData[],
-        total: resolveTotal(payload, candidates.length),
+        total: resolveTotal(payload as Record<string, unknown>, candidates.length),
       };
     }
 
     if (candidates && typeof candidates === "object") {
       return {
         data: [candidates as TData],
-        total: resolveTotal(payload, 1),
+        total: resolveTotal(payload as Record<string, unknown>, 1),
       };
     }
 
-    return {
-      data: [],
-      total: resolveTotal(payload, 0),
-    };
+    return { data: [], total: resolveTotal(payload as Record<string, unknown>, 0) };
   }
 
   return { data: [], total: 0 };
@@ -207,9 +214,57 @@ const ensureParams = (
   meta: params.meta,
 });
 
+// --- DEV in-memory store -------------------------------------------------
+const devStore: Record<string, Record<string, unknown>[]> = {
+  students: [
+    {
+      id: "stu_1",
+      fullName: "Ani Putri",
+      studentId: "S001",
+      birthDate: "2010-05-12",
+      classId: null,
+    },
+    {
+      id: "stu_2",
+      fullName: "Budi Santoso",
+      studentId: "S002",
+      birthDate: "2010-08-30",
+      classId: null,
+    },
+  ],
+  teachers: [
+    { id: "tch_1", fullName: "Ibu Siti", teacherId: "T01", email: "siti@example.sch.id" },
+    { id: "tch_2", fullName: "Pak Joko", teacherId: "T02", email: "joko@example.sch.id" },
+  ],
+  classes: [
+    { id: "class_1", name: "Kelas 1A", teacherId: "tch_1" },
+    { id: "class_2", name: "Kelas 2B", teacherId: "tch_2" },
+  ],
+  subjects: [
+    { id: "sub_1", name: "Matematika" },
+    { id: "sub_2", name: "Bahasa Indonesia" },
+  ],
+  terms: [
+    { id: "term_1", name: "Semester 1", startDate: "2025-07-01", endDate: "2025-12-15" },
+    { id: "term_2", name: "Semester 2", startDate: "2026-01-05", endDate: "2026-06-20" },
+  ],
+  enrollments: [{ id: "enr_1", studentId: "stu_1", classId: "class_1", termId: "term_1" }],
+  ["grade-components"]: [
+    { id: "gc_1", name: "UTS", weight: 40 },
+    { id: "gc_2", name: "UAS", weight: 60 },
+  ],
+  grades: [{ id: "g_1", studentId: "stu_1", subjectId: "sub_1", value: 85 }],
+  attendance: [{ id: "att_1", studentId: "stu_1", date: "2025-09-01", status: "present" }],
+};
+
+const nextId = (resource: string) =>
+  `${resource}_${Date.now().toString(36)}_${Math.floor(Math.random() * 1000)}`;
+
 const dataProvider: DataProvider = {
-  getList: async (params) => {
-    const { resource, pagination, filters, meta } = ensureParams(params);
+  getList: async <TData extends BaseRecord = BaseRecord>(
+    params: Parameters<DataProvider["getList"]>[0]
+  ): Promise<GetListResponse<TData>> => {
+    const { resource, pagination, filters, meta } = ensureParams(params as any);
 
     const queryParams: Record<string, unknown> = {
       ...transformFilters(resource, filters as CrudFilters | undefined),
@@ -223,6 +278,15 @@ const dataProvider: DataProvider = {
       queryParams.cursor = meta.cursor;
     }
 
+    if (import.meta.env.DEV) {
+      const store = devStore[resource] ?? [];
+      const page = pagination?.current ?? 1;
+      const pageSize = pagination?.pageSize ?? 10;
+      const start = (page - 1) * pageSize;
+      const sliced = store.slice(start, start + pageSize) as TData[];
+      return { data: sliced, total: store.length } as GetListResponse<TData>;
+    }
+
     const response = await api.get(ensureLeadingSlash(resource), {
       params: queryParams,
       headers: resolveHeaders(meta),
@@ -234,11 +298,90 @@ const dataProvider: DataProvider = {
 
   getApiUrl: () => api.defaults.baseURL ?? "",
 
-  getOne: async () => Promise.reject(new Error("getOne is not implemented yet")),
-  create: async () => Promise.reject(new Error("create is not implemented yet")),
-  update: async () => Promise.reject(new Error("update is not implemented yet")),
-  deleteOne: async () => Promise.reject(new Error("deleteOne is not implemented yet")),
-  getMany: async () => Promise.reject(new Error("getMany is not implemented yet")),
+  getOne: async <TData extends BaseRecord = BaseRecord>(
+    params: Parameters<DataProvider["getOne"]>[0]
+  ): Promise<GetOneResponse<TData>> => {
+    const { resource, id, meta } = params as any;
+    if (import.meta.env.DEV) {
+      const store = devStore[resource] ?? [];
+      const found = store.find((r) => String((r as any).id) === String(id));
+      if (!found) throw new Error("Not found");
+      return { data: found as TData };
+    }
+    const response = await api.get(ensureLeadingSlash(`${resource}/${id}`), {
+      headers: resolveHeaders(meta),
+    });
+    return { data: response.data as TData };
+  },
+
+  create: async <TData extends BaseRecord = BaseRecord>(
+    params: Parameters<DataProvider["create"]>[0]
+  ): Promise<CreateResponse<TData>> => {
+    const { resource, variables, meta } = params as any;
+    if (import.meta.env.DEV) {
+      const store = devStore[resource] ?? (devStore[resource] = []);
+      const id = nextId(resource);
+      const item = { id, ...(variables as object) } as Record<string, unknown>;
+      store.unshift(item);
+      return { data: item as TData };
+    }
+    const response = await api.post(ensureLeadingSlash(resource), variables, {
+      headers: resolveHeaders(meta),
+    });
+    return { data: response.data as TData };
+  },
+
+  update: async <TData extends BaseRecord = BaseRecord>(
+    params: Parameters<DataProvider["update"]>[0]
+  ): Promise<UpdateResponse<TData>> => {
+    const { resource, id, variables, meta } = params as any;
+    if (import.meta.env.DEV) {
+      const store = devStore[resource] ?? [];
+      const idx = store.findIndex((r) => String((r as any).id) === String(id));
+      if (idx === -1) throw new Error("Not found");
+      const updated = { ...(store[idx] as Record<string, unknown>), ...(variables as object) };
+      store[idx] = updated;
+      return { data: updated as TData };
+    }
+    const response = await api.patch(ensureLeadingSlash(`${resource}/${id}`), variables, {
+      headers: resolveHeaders(meta),
+    });
+    return { data: response.data as TData };
+  },
+
+  deleteOne: async <TData extends BaseRecord = BaseRecord>(
+    params: Parameters<DataProvider["deleteOne"]>[0]
+  ): Promise<DeleteOneResponse<TData>> => {
+    const { resource, id, meta } = params as any;
+    if (import.meta.env.DEV) {
+      const store = devStore[resource] ?? [];
+      const idx = store.findIndex((r) => String((r as any).id) === String(id));
+      if (idx === -1) throw new Error("Not found");
+      const [removed] = store.splice(idx, 1);
+      return { data: removed as TData };
+    }
+    const response = await api.delete(ensureLeadingSlash(`${resource}/${id}`), {
+      headers: resolveHeaders(meta),
+    });
+    return { data: response.data as TData };
+  },
+
+  getMany: async <TData extends BaseRecord = BaseRecord>(
+    params: Parameters<DataProvider["getMany"]>[0]
+  ): Promise<GetManyResponse<TData>> => {
+    const { resource, ids, meta } = params as any;
+    if (import.meta.env.DEV) {
+      const store = devStore[resource] ?? [];
+      const found = store.filter((r) => ids.includes((r as any).id));
+      return { data: found as TData[] };
+    }
+    const response = await api.get(ensureLeadingSlash(resource), {
+      params: { ids },
+      headers: resolveHeaders(meta),
+    });
+    return extractListPayload(response) as unknown as GetManyResponse<TData>;
+  },
+
   custom: async () => Promise.reject(new Error("custom requests are not implemented yet")),
 };
 

@@ -1,3 +1,5 @@
+import { rest } from "msw";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1";
 
 // Minimal in-memory fixtures
@@ -24,12 +26,52 @@ const teachers = [
   { id: "tch_2", fullName: "Pak Joko", teacherId: "T02", email: "joko@example.sch.id" },
 ];
 
+const classes = [
+  { id: "class_1", name: "Kelas 1A", teacherId: "tch_1" },
+  { id: "class_2", name: "Kelas 2B", teacherId: "tch_2" },
+];
+
+const subjects = [
+  { id: "sub_1", name: "Matematika" },
+  { id: "sub_2", name: "Bahasa Indonesia" },
+];
+
+const terms = [
+  { id: "term_1", name: "Semester 1", startDate: "2025-07-01", endDate: "2025-12-15" },
+  { id: "term_2", name: "Semester 2", startDate: "2026-01-05", endDate: "2026-06-20" },
+];
+
+const enrollments = [{ id: "enr_1", studentId: "stu_1", classId: "class_1", termId: "term_1" }];
+
+const gradeComponents = [
+  { id: "gc_1", name: "UTS", weight: 40 },
+  { id: "gc_2", name: "UAS", weight: 60 },
+];
+
+const grades = [{ id: "g_1", studentId: "stu_1", subjectId: "sub_1", value: 85 }];
+
+const attendance = [{ id: "att_1", studentId: "stu_1", date: "2025-09-01", status: "present" }];
+
 const makeList = (resource: string) => {
   switch (resource) {
     case "students":
       return { data: students, total: students.length };
     case "teachers":
       return { data: teachers, total: teachers.length };
+    case "classes":
+      return { data: classes, total: classes.length };
+    case "subjects":
+      return { data: subjects, total: subjects.length };
+    case "terms":
+      return { data: terms, total: terms.length };
+    case "enrollments":
+      return { data: enrollments, total: enrollments.length };
+    case "grade-components":
+      return { data: gradeComponents, total: gradeComponents.length };
+    case "grades":
+      return { data: grades, total: grades.length };
+    case "attendance":
+      return { data: attendance, total: attendance.length };
     default:
       return { data: [], total: 0 };
   }
@@ -50,17 +92,10 @@ export function setSimulation({
   if (typeof sessionExpiry === "boolean") simulateSessionExpiry = sessionExpiry;
 }
 
-export async function createHandlers(rest?: any) {
-  // Expect the browser bootstrap to pass the `rest` helper. If not provided,
-  // avoid dynamic imports (they caused deep-import resolution issues with Vite)
-  // and return an empty handler set so the worker can still start.
-  if (!rest) {
-    // eslint-disable-next-line no-console
-    console.error(
-      "MSW: 'rest' helper not provided to createHandlers — returning empty handlers. Ensure browser.ts forwards rest."
-    );
-    return [];
-  }
+export async function createHandlers() {
+  // Use the top-level `rest` import from msw. Avoid dynamic deep imports
+  // which may be blocked by Vite/package export maps. This keeps handler
+  // definitions deterministic at runtime.
   const authLoginRegex = /\/api(?:\/v1)?\/auth\/login$/;
   const authMeRegex = /\/api(?:\/v1)?\/auth\/me$/;
   const authLogoutRegex = /\/api(?:\/v1)?\/auth\/logout$/;

@@ -11,36 +11,24 @@ import { ThemedLayoutV2, ErrorComponent, notificationProvider } from "@refinedev
 import { ConfigProvider, App as AntdApp, theme } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// Start MSW in development to mock API requests. This is a lazy import so
-// the mocks are only bundled/loaded during development.
-if (import.meta.env.DEV) {
-  void import("./mocks/browser").then(({ startWorker }) => {
-    // start with default options; you can pass { serviceWorker: { url: '/mockServiceWorker.js' } }
-    // if you generated the worker into a different public path.
-    startWorker({ onUnhandledRequest: "bypass" }).catch((err: unknown) => {
-      // Non-fatal: log the error but don't break the app
-      // eslint-disable-next-line no-console
-      console.warn("MSW failed to start:", err instanceof Error ? err.message : String(err));
-    });
-  });
-}
+// We'll start MSW in development and await the worker to be ready before
+// mounting the React app so all initial requests are intercepted.
 
 import { resolveDataProvider } from "./providers/dataProvider";
 import { authProvider } from "./providers/authProvider";
 import { ResourceList } from "./pages/resource-list";
 import { LoginPage } from "./pages/login";
 import { RouteDebugger } from "./components/route-debugger";
+import { StudentsCreate } from "./pages/students-create";
+import { StudentsEdit } from "./pages/students-edit";
+import { TeachersCreate } from "./pages/teachers-create";
+import { ClassesCreate } from "./pages/classes-create";
+import { SubjectsCreate } from "./pages/subjects-create";
 
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
 
-// Start MSW in development so the admin UI works when backend is down or rate-limited.
-if (import.meta.env.DEV) {
-  // lazy import so MSW isn't bundled into production build
-  void import("./mocks/browser").then(({ worker }) => {
-    worker.start({ onUnhandledRequest: "bypass" });
-  });
-}
+// render app after optional mock bootstrap (below)
 
 const queryClient = new QueryClient();
 
@@ -74,61 +62,107 @@ const LayoutWrapper: React.FC = () =>
     </ThemedLayoutV2>
   );
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <ConfigProvider
-          theme={{
-            algorithm: theme.defaultAlgorithm,
-            token: {
-              colorPrimary: "#1d4ed8",
-              borderRadius: 8,
-            },
-          }}
-        >
-          <AntdApp>
-            <Refine
-              dataProvider={dataProvider}
-              authProvider={authProvider}
-              notificationProvider={notificationProvider}
-              routerProvider={routerProvider}
-              resources={resources.map(({ name, list, meta }) => ({
-                name,
-                list,
-                meta,
-              }))}
-              options={{
-                syncWithLocation: true,
-                warnWhenUnsavedChanges: false,
-              }}
-            >
-              <Routes>
-                <Route
-                  element={
-                    <Authenticated key="authenticated-routes" fallback={<LoginPage />}>
-                      <LayoutWrapper />
-                    </Authenticated>
-                  }
-                >
-                  <Route index element={<NavigateToResource resource={resources[0].name} />} />
-                  {resources.map((resource) => (
-                    <Route key={resource.name} path={resource.name}>
-                      <Route index element={<ResourceList />} />
-                    </Route>
-                  ))}
-                </Route>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="*" element={<ErrorComponent />} />
-              </Routes>
+async function bootstrap() {
+  if (import.meta.env.DEV) {
+    try {
+      // prefer a start helper if present, otherwise call worker.start()
+      // @ts-ignore
+      const mswMod = await import("./mocks/browser");
+      if (typeof (mswMod as any).startWorker === "function") {
+        await (mswMod as any).startWorker({ onUnhandledRequest: "bypass" });
+      } else if ((mswMod as any).worker && typeof (mswMod as any).worker.start === "function") {
+        await (mswMod as any).worker.start({ onUnhandledRequest: "bypass" });
+      } else if (
+        (mswMod as any).default?.worker &&
+        typeof (mswMod as any).default.worker.start === "function"
+      ) {
+        await (mswMod as any).default.worker.start({ onUnhandledRequest: "bypass" });
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn("MSW: couldn't find a start entry on ./mocks/browser", Object.keys(mswMod));
+      }
+      // eslint-disable-next-line no-console
+      console.info("MSW bootstrap complete (dev)");
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("MSW failed to start:", err instanceof Error ? err.message : String(err));
+    }
+  }
 
-              <DocumentTitleHandler />
-              <UnsavedChangesNotifier />
-              <RouteDebugger />
-            </Refine>
-          </AntdApp>
-        </ConfigProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
-  </React.StrictMode>
-);
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <ConfigProvider
+            theme={{
+              algorithm: theme.defaultAlgorithm,
+              token: {
+                colorPrimary: "#1d4ed8",
+                borderRadius: 8,
+              },
+            }}
+          >
+            <AntdApp>
+              <Refine
+                dataProvider={dataProvider}
+                authProvider={authProvider}
+                notificationProvider={notificationProvider}
+                routerProvider={routerProvider}
+                resources={resources.map(({ name, list, meta }) => ({
+                  name,
+                  list,
+                  meta,
+                }))}
+                options={{
+                  syncWithLocation: true,
+                  warnWhenUnsavedChanges: false,
+                }}
+              >
+                <Routes>
+                  <Route
+                    element={
+                      <Authenticated key="authenticated-routes" fallback={<LoginPage />}>
+                        <LayoutWrapper />
+                      </Authenticated>
+                    }
+                  >
+                    <Route index element={<NavigateToResource resource={resources[0].name} />} />
+                    {resources.map((resource) => (
+                      <Route key={resource.name} path={resource.name}>
+                        <Route index element={<ResourceList />} />
+                        {/* Resource-specific pages (some implemented) */}
+                        {resource.name === "students" && (
+                          <>
+                            <Route path="create" element={<StudentsCreate />} />
+                            <Route path=":id" element={<StudentsEdit />} />
+                          </>
+                        )}
+                        {resource.name === "teachers" && (
+                          <Route path="create" element={<TeachersCreate />} />
+                        )}
+                        {resource.name === "classes" && (
+                          <Route path="create" element={<ClassesCreate />} />
+                        )}
+                        {resource.name === "subjects" && (
+                          <Route path="create" element={<SubjectsCreate />} />
+                        )}
+                      </Route>
+                    ))}
+                  </Route>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="*" element={<ErrorComponent />} />
+                </Routes>
+
+                <DocumentTitleHandler />
+                <UnsavedChangesNotifier />
+                <RouteDebugger />
+              </Refine>
+            </AntdApp>
+          </ConfigProvider>
+        </QueryClientProvider>
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+}
+
+void bootstrap();
