@@ -181,6 +181,9 @@ export class AuthService {
         );
       }
     } catch (err) {
+      if (err instanceof UnauthorizedException) {
+        throw err;
+      }
       // If Redis fails (rate limit, network), don't block login flow — log and continue
       this.logger.warn(`Redis unavailable in ensureNotLocked: ${String(err)}`);
       return;

@@ -36,6 +36,7 @@ import { GradeComponentsCreate } from "./pages/grade-components-create";
 import { GradeComponentsEdit } from "./pages/grade-components-edit";
 import { GradesEdit } from "./pages/grades-edit";
 import { GradeConfigPage } from "./pages/grade-config";
+import { DashboardPage } from "./pages/dashboard";
 import { AttendanceCreate } from "./pages/attendance-create";
 import { AttendanceEdit } from "./pages/attendance-edit";
 import { AttendanceDailyPage } from "./pages/attendance-daily";
@@ -54,6 +55,17 @@ import "antd/dist/reset.css";
 const queryClient = new QueryClient();
 
 const resources = [
+  {
+    name: "dashboard",
+    list: "/dashboard",
+    meta: {
+      label: "Dashboard",
+      canCreate: false,
+      canEdit: false,
+      canDelete: false,
+      canShow: false,
+    },
+  },
   {
     name: "students",
     list: "/students",
@@ -339,7 +351,9 @@ async function bootstrap() {
                         <Route
                           index
                           element={
-                            resource.name === "grade-configs" ? (
+                            resource.name === "dashboard" ? (
+                              <DashboardPage />
+                            ) : resource.name === "grade-configs" ? (
                               <GradeConfigPage />
                             ) : resource.name === "announcements" ? (
                               <AnnouncementsPage />

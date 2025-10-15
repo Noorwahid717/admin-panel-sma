@@ -42,6 +42,27 @@ const toNumber = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+export const calculateWeightedAggregate = (
+  components: Array<{ weight?: number | string }>,
+  scores: Array<number | undefined>
+) => {
+  if (components.length === 0 || components.length !== scores.length) {
+    return undefined;
+  }
+
+  if (scores.some((score) => typeof score !== "number")) {
+    return undefined;
+  }
+
+  const total = components.reduce((acc, component, index) => {
+    const weight = toNumber(component.weight) ?? 0;
+    const score = scores[index] as number;
+    return acc + (score * weight) / 100;
+  }, 0);
+
+  return Number.isFinite(total) ? Number(total.toFixed(2)) : undefined;
+};
+
 export const GradeConfigPage: React.FC = () => {
   const { open: notify } = useNotification();
   const { value: storedMapping, setValue: setStoredMapping } = usePersistentSelection<
@@ -197,15 +218,7 @@ export const GradeConfigPage: React.FC = () => {
       let finalScore: number | undefined;
       if (componentScores.every((value) => typeof value === "number")) {
         if (scheme === "WEIGHTED") {
-          const weightedSum = relatedComponents.reduce((acc, component, index) => {
-            const score = componentScores[index];
-            const weight = toNumber(component.weight) ?? 0;
-            if (typeof score !== "number") {
-              return acc;
-            }
-            return acc + (score * weight) / 100;
-          }, 0);
-          finalScore = Number(weightedSum.toFixed(2));
+          finalScore = calculateWeightedAggregate(relatedComponents, componentScores);
         } else {
           const sum = componentScores.reduce((acc, value) => acc + (value ?? 0), 0);
           finalScore = Number((sum / componentScores.length).toFixed(2));
@@ -305,11 +318,7 @@ export const GradeConfigPage: React.FC = () => {
     if (componentAverages.length === 0) return undefined;
 
     if (scheme === "WEIGHTED") {
-      const weightedSum = relatedComponents.reduce((acc, component, index) => {
-        const weight = toNumber(component.weight) ?? 0;
-        return acc + (componentAverages[index] * weight) / 100;
-      }, 0);
-      return Number.isFinite(weightedSum) ? Number(weightedSum.toFixed(2)) : undefined;
+      return calculateWeightedAggregate(relatedComponents, componentAverages);
     }
 
     const average = componentAverages.reduce((acc, val) => acc + val, 0) / componentAverages.length;

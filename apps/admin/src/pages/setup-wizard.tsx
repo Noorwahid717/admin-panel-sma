@@ -38,7 +38,7 @@ type TermRecord = {
   active?: boolean;
 };
 
-const parseTimeToMinutes = (time: string) => {
+export const parseTimeToMinutes = (time: string) => {
   const [hoursStr, minutesStr] = time.split(":");
   const hours = Number(hoursStr);
   const minutes = Number(minutesStr);
@@ -48,10 +48,10 @@ const parseTimeToMinutes = (time: string) => {
   return hours * 60 + minutes;
 };
 
-const timesOverlap = (startA: number, endA: number, startB: number, endB: number) =>
+export const timesOverlap = (startA: number, endA: number, startB: number, endB: number) =>
   startA < endB && startB < endA;
 
-const calculateScheduleConflicts = (entries: ScheduleRow[], mappings: ClassSubjectRow[]) => {
+export const calculateScheduleConflicts = (entries: ScheduleRow[], mappings: ClassSubjectRow[]) => {
   if (!entries || entries.length === 0) {
     return 0;
   }
@@ -124,7 +124,7 @@ type ClassRowData = {
   termId?: string;
 };
 
-type ClassSubjectRow = {
+export type ClassSubjectRow = {
   id: string;
   classroomId: string;
   subjectId: string;
@@ -132,7 +132,7 @@ type ClassSubjectRow = {
   termId?: string;
 };
 
-type ScheduleRow = {
+export type ScheduleRow = {
   id: string;
   classSubjectId: string;
   dayOfWeek: number;

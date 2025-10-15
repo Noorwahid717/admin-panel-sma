@@ -24,9 +24,9 @@
 - [x] Penetapan KKM & bobot finalisasi
 - [ ] Finalisasi guru & verifikasi wali
 - [ ] Batch rapor PDF worker
-- [ ] Dashboard Kepsek (distribusi, outlier, remedial)
-- [ ] Mutasi masuk/keluar & audit trail
-- [ ] Arsip rapor & absensi (PDF/CSV)
+- [x] Dashboard Kepsek (distribusi, outlier, remedial)
+- [x] Mutasi masuk/keluar & audit trail
+- [x] Arsip rapor & absensi (PDF/CSV)
 - [ ] Mutasi keluar → tidak muncul absensi
 - [ ] Arsip CSV round-trip
 - [ ] Audit log merekam aktor/perubahan
@@ -36,7 +36,7 @@
 - [ ] Rate limit & kebijakan password
 - [ ] README dev + arsitektur + deploy
 - [ ] SOP pengguna (PDF)
-- [ ] Jadwal overlap test
-- [ ] Nilai weighted test
+- [x] Jadwal overlap test
+- [x] Nilai weighted test
 - [ ] Notifikasi A>X test
 - [ ] Mutasi tengah semester test

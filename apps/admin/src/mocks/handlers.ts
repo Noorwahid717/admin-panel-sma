@@ -9,13 +9,6 @@ import { http, HttpResponse } from "msw";
  * NIP 18 digit, kelas level 10-12 (X, XI, XII), serta komponen nilai berbobot 100%.
  */
 
-let currentUser = {
-  id: "user_superadmin",
-  email: "superadmin@harapannusantara.sch.id",
-  fullName: "Super Admin",
-  role: "SUPERADMIN",
-};
-
 const students = [
   {
     id: "stu_aditya_wijaya",
@@ -405,6 +398,370 @@ const behaviorNotes = [
   },
 ];
 
+const mutations = [
+  {
+    id: "mut_in_aditya",
+    studentId: "stu_aditya_wijaya",
+    studentName: "Aditya Wijaya",
+    type: "IN",
+    effectiveDate: "2024-08-01",
+    fromClassId: null,
+    fromClassName: null,
+    toClassId: "class_x_ipa_1",
+    toClassName: "Kelas X IPA 1",
+    reason: "Mutasi dari sekolah lain mengikuti orang tua berpindah tugas.",
+    handledById: "tch_marta_siregar",
+    handledByName: "Ibu Marta Siregar",
+    auditTrail: [
+      {
+        id: "audit_mut_in_aditya_initiated",
+        timestamp: "2024-07-25T08:20:00.000Z",
+        actorId: "user_superadmin",
+        actorName: "Super Admin",
+        action: "REQUEST_RECEIVED",
+        details: "Permohonan mutasi diterima dari orang tua.",
+      },
+      {
+        id: "audit_mut_in_aditya_verified",
+        timestamp: "2024-07-28T13:45:00.000Z",
+        actorId: "user_superadmin",
+        actorName: "Super Admin",
+        action: "DOCUMENT_VERIFIED",
+        details: "Dokumen asli rapor & surat pindah diverifikasi.",
+      },
+      {
+        id: "audit_mut_in_aditya_completed",
+        timestamp: "2024-08-01T01:00:00.000Z",
+        actorId: "user_superadmin",
+        actorName: "Super Admin",
+        action: "ENROLLMENT_CREATED",
+        details: "Siswa resmi terdaftar di Kelas X IPA 1.",
+      },
+    ],
+  },
+  {
+    id: "mut_out_nabila",
+    studentId: "stu_nabila_pratiwi",
+    studentName: "Nabila Pratiwi",
+    type: "OUT",
+    effectiveDate: "2024-09-10",
+    fromClassId: "class_xi_ips_1",
+    fromClassName: "Kelas XI IPS 1",
+    toClassId: null,
+    toClassName: null,
+    reason: "Mengikuti orang tua pindah tugas keluar kota.",
+    handledById: "tch_budi_hartono",
+    handledByName: "Pak Budi Hartono",
+    auditTrail: [
+      {
+        id: "audit_mut_out_nabila_requested",
+        timestamp: "2024-09-01T03:30:00.000Z",
+        actorId: "user_superadmin",
+        actorName: "Super Admin",
+        action: "REQUEST_SUBMITTED",
+        details: "Orang tua mengajukan surat pengantar mutasi.",
+      },
+      {
+        id: "audit_mut_out_nabila_cleared",
+        timestamp: "2024-09-05T02:15:00.000Z",
+        actorId: "user_superadmin",
+        actorName: "Super Admin",
+        action: "CLEARANCE_COMPLETED",
+        details: "Wali kelas dan bendahara menyelesaikan proses clearance.",
+      },
+      {
+        id: "audit_mut_out_nabila_released",
+        timestamp: "2024-09-10T01:45:00.000Z",
+        actorId: "user_superadmin",
+        actorName: "Super Admin",
+        action: "RECORD_RELEASED",
+        details: "Dokumen mutasi dan arsip rapor diunggah dan dibagikan.",
+      },
+    ],
+  },
+  {
+    id: "mut_internal_sri",
+    studentId: "stu_sri_rahayu",
+    studentName: "Sri Rahayu",
+    type: "INTERNAL",
+    effectiveDate: "2024-08-18",
+    fromClassId: "class_x_ipa_1",
+    fromClassName: "Kelas X IPA 1",
+    toClassId: "class_x_ipa_1",
+    toClassName: "Kelas X IPA 1",
+    reason: "Pergantian jalur peminatan dengan jadwal berbeda.",
+    handledById: "tch_marta_siregar",
+    handledByName: "Ibu Marta Siregar",
+    auditTrail: [
+      {
+        id: "audit_mut_internal_sri_review",
+        timestamp: "2024-08-10T04:10:00.000Z",
+        actorId: "user_superadmin",
+        actorName: "Super Admin",
+        action: "REVIEW_COMPLETED",
+        details: "Konselor menyetujui perubahan jalur peminatan.",
+      },
+      {
+        id: "audit_mut_internal_sri_schedule",
+        timestamp: "2024-08-15T02:50:00.000Z",
+        actorId: "user_superadmin",
+        actorName: "Super Admin",
+        action: "SCHEDULE_UPDATED",
+        details: "Jadwal mata pelajaran diperbarui tanpa konflik.",
+      },
+    ],
+  },
+];
+
+const archives = [
+  {
+    id: "archive_rapor_term_ganjil",
+    termId: "term_2024_ganjil",
+    termName: "TP 2024/2025 - Semester Ganjil",
+    type: "REPORT_PDF",
+    label: "Rapor Semester Ganjil 2024/2025",
+    format: "zip",
+    fileName: "rapor_ganjil_2024-2025.zip",
+    fileSize: 104857600,
+    checksum: "f3a8d1c4",
+    downloadUrl: "https://example-cdn.local/files/rapor_ganjil_2024-2025.zip",
+    generatedAt: "2024-12-22T02:15:00.000Z",
+    generatedBy: "user_superadmin",
+  },
+  {
+    id: "archive_absensi_term_ganjil",
+    termId: "term_2024_ganjil",
+    termName: "TP 2024/2025 - Semester Ganjil",
+    type: "ATTENDANCE_CSV",
+    label: "Absensi Harian Semester Ganjil 2024/2025",
+    format: "csv",
+    fileName: "absensi_ganjil_2024-2025.csv",
+    fileSize: 2097152,
+    checksum: "c9e2a7b1",
+    downloadUrl: "https://example-cdn.local/files/absensi_ganjil_2024-2025.csv",
+    generatedAt: "2024-12-21T10:45:00.000Z",
+    generatedBy: "user_superadmin",
+  },
+  {
+    id: "archive_rapor_midterm",
+    termId: "term_2024_ganjil",
+    termName: "TP 2024/2025 - Semester Ganjil",
+    type: "REPORT_PDF",
+    label: "Progress Report Tengah Semester",
+    format: "pdf",
+    fileName: "progress_report_midterm.pdf",
+    fileSize: 5242880,
+    checksum: "a1b2c3d4",
+    downloadUrl: "https://example-cdn.local/files/progress_report_midterm.pdf",
+    generatedAt: "2024-10-15T07:30:00.000Z",
+    generatedBy: "user_superadmin",
+  },
+];
+
+const principalDashboard = {
+  termId: "term_2024_ganjil",
+  updatedAt: "2024-09-01T02:00:00.000Z",
+  distribution: {
+    overallAverage: 85.6,
+    totalStudents: 96,
+    byRange: [
+      { range: "90-100", count: 18 },
+      { range: "80-89", count: 42 },
+      { range: "70-79", count: 26 },
+      { range: "<70", count: 10 },
+    ],
+    byClass: [
+      {
+        classId: "class_x_ipa_1",
+        className: "Kelas X IPA 1",
+        average: 87.4,
+        highest: 96,
+        lowest: 72,
+      },
+      {
+        classId: "class_xi_ips_1",
+        className: "Kelas XI IPS 1",
+        average: 83.1,
+        highest: 94,
+        lowest: 68,
+      },
+      {
+        classId: "class_xii_ipa_1",
+        className: "Kelas XII IPA 1",
+        average: 86.3,
+        highest: 97,
+        lowest: 74,
+      },
+    ],
+  },
+  outliers: [
+    {
+      studentId: "stu_sri_rahayu",
+      studentName: "Sri Rahayu",
+      classId: "class_x_ipa_1",
+      className: "Kelas X IPA 1",
+      subjectId: "sub_mat_xa",
+      subjectName: "Matematika Wajib",
+      zScore: 2.3,
+      score: 98,
+      trend: "UP",
+      lastUpdated: "2024-08-22T08:30:00.000Z",
+    },
+    {
+      studentId: "stu_nabila_pratiwi",
+      studentName: "Nabila Pratiwi",
+      classId: "class_xi_ips_1",
+      className: "Kelas XI IPS 1",
+      subjectId: "sub_sos_xi",
+      subjectName: "Sosiologi",
+      zScore: -2.1,
+      score: 62,
+      trend: "DOWN",
+      lastUpdated: "2024-08-20T09:15:00.000Z",
+    },
+  ],
+  remedial: [
+    {
+      studentId: "stu_raffael_putra",
+      studentName: "Raffael Putra",
+      classId: "class_xi_ips_1",
+      className: "Kelas XI IPS 1",
+      subjectId: "sub_sos_xi",
+      subjectName: "Sosiologi",
+      score: 68,
+      kkm: 75,
+      attempts: 1,
+      lastAttempt: "2024-08-18",
+    },
+    {
+      studentId: "stu_nabila_pratiwi",
+      studentName: "Nabila Pratiwi",
+      classId: "class_xi_ips_1",
+      className: "Kelas XI IPS 1",
+      subjectId: "sub_mat_xa",
+      subjectName: "Matematika Wajib",
+      score: 65,
+      kkm: 70,
+      attempts: 2,
+      lastAttempt: "2024-08-19",
+    },
+  ],
+  attendance: {
+    overall: 95.4,
+    byClass: [
+      { classId: "class_x_ipa_1", className: "Kelas X IPA 1", percentage: 96.8 },
+      { classId: "class_xi_ips_1", className: "Kelas XI IPS 1", percentage: 94.1 },
+      { classId: "class_xii_ipa_1", className: "Kelas XII IPA 1", percentage: 95.2 },
+    ],
+    alerts: [
+      {
+        classId: "class_xi_ips_1",
+        className: "Kelas XI IPS 1",
+        indicator: "ABSENCE_SPIKE",
+        percentage: 88.5,
+        week: "2024-W33",
+      },
+    ],
+  },
+};
+
+type MockUserRecord = {
+  id: string;
+  email: string;
+  password: string;
+  fullName: string;
+  role:
+    | "SUPERADMIN"
+    | "ADMIN_TU"
+    | "KEPALA_SEKOLAH"
+    | "WALI_KELAS"
+    | "GURU_MAPEL"
+    | "SISWA"
+    | "ORTU";
+  teacherId?: string | null;
+  studentId?: string | null;
+  classId?: string | null;
+};
+
+const DEFAULT_PASSWORD = "Admin123!";
+
+const mockUsers: MockUserRecord[] = [
+  {
+    id: "user_superadmin",
+    email: "superadmin@harapannusantara.sch.id",
+    password: DEFAULT_PASSWORD,
+    fullName: "Super Admin",
+    role: "SUPERADMIN",
+  },
+  {
+    id: "user_admin_tu",
+    email: "admin.tu@harapannusantara.sch.id",
+    password: DEFAULT_PASSWORD,
+    fullName: "Admin Tata Usaha",
+    role: "ADMIN_TU",
+  },
+  {
+    id: "user_kepsek",
+    email: "kepsek@harapannusantara.sch.id",
+    password: DEFAULT_PASSWORD,
+    fullName: "Drs. Wirawan Surya",
+    role: "KEPALA_SEKOLAH",
+  },
+  {
+    id: "user_wali_kelas",
+    email: "wali.kelas@harapannusantara.sch.id",
+    password: DEFAULT_PASSWORD,
+    fullName: "Marta Siregar",
+    role: "WALI_KELAS",
+    teacherId: "tch_marta_siregar",
+    classId: "class_x_ipa_1",
+  },
+  {
+    id: "user_guru_mapel",
+    email: "guru.mapel@harapannusantara.sch.id",
+    password: DEFAULT_PASSWORD,
+    fullName: "Budi Hartono",
+    role: "GURU_MAPEL",
+    teacherId: "tch_budi_hartono",
+  },
+  {
+    id: "user_siswa",
+    email: "siswa.aditya@harapannusantara.sch.id",
+    password: DEFAULT_PASSWORD,
+    fullName: "Aditya Wijaya",
+    role: "SISWA",
+    studentId: "stu_aditya_wijaya",
+    classId: "class_x_ipa_1",
+  },
+  {
+    id: "user_ortu",
+    email: "ortu.aditya@harapannusantara.sch.id",
+    password: DEFAULT_PASSWORD,
+    fullName: "Bambang Wijaya",
+    role: "ORTU",
+    studentId: "stu_aditya_wijaya",
+  },
+];
+
+const sanitizeUser = (user: MockUserRecord) => {
+  const { password: _password, ...rest } = user;
+  return rest;
+};
+
+let currentUser = sanitizeUser(mockUsers[0]);
+
+const findUserByEmail = (email: string | null | undefined) => {
+  if (!email) return undefined;
+  const normalized = email.trim().toLowerCase();
+  return mockUsers.find((user) => user.email.toLowerCase() === normalized);
+};
+
+const findUserByRole = (role: string | null | undefined) => {
+  if (!role) return undefined;
+  const normalized = role.trim().toUpperCase();
+  return mockUsers.find((user) => user.role === normalized);
+};
+
 const resourceKeys = [
   "students",
   "teachers",
@@ -418,9 +775,12 @@ const resourceKeys = [
   "attendance",
   "class-subjects",
   "schedules",
+  "mutations",
+  "archives",
+  "dashboard",
 ] as const;
 
-type ResourceKey = (typeof resourceKeys)[number];
+export type ResourceKey = (typeof resourceKeys)[number];
 
 const stores: Record<ResourceKey, Record<string, any>[]> = {
   students,
@@ -437,10 +797,13 @@ const stores: Record<ResourceKey, Record<string, any>[]> = {
   schedules,
   announcements,
   "behavior-notes": behaviorNotes,
+  mutations,
+  archives,
+  dashboard: [principalDashboard],
 };
 
 const resourcePathRegex =
-  /\/api(?:\/v1)?\/(students|teachers|classes|subjects|terms|enrollments|grade-components|grade-configs|grades|attendance|class-subjects|schedules|announcements|behavior-notes)(?:\/([^/?]+))?\/?$/;
+  /\/api(?:\/v1)?\/(students|teachers|classes|subjects|terms|enrollments|grade-components|grade-configs|grades|attendance|class-subjects|schedules|announcements|behavior-notes|mutations|archives|dashboard)(?:\/([^/?]+))?\/?$/;
 
 const parseResourceRequest = (request: Request) => {
   const url = new URL(request.url);
@@ -592,6 +955,27 @@ const normalizers: Partial<
     if (date) next.date = date;
     return next;
   },
+  mutations: (data) => {
+    const next = { ...data };
+    const effectiveDate = sanitizeDate(next.effectiveDate);
+    if (effectiveDate) next.effectiveDate = effectiveDate;
+    if (Array.isArray(next.auditTrail)) {
+      next.auditTrail = next.auditTrail.map((entry: Record<string, any>) => ({
+        ...entry,
+        timestamp: entry.timestamp ?? new Date().toISOString(),
+      }));
+    }
+    return next;
+  },
+  archives: (data) => {
+    const next = { ...data };
+    if (typeof next.fileSize === "string") {
+      const parsed = Number(next.fileSize);
+      next.fileSize = Number.isNaN(parsed) ? next.fileSize : parsed;
+    }
+    return next;
+  },
+  dashboard: (data) => ({ ...data }),
 };
 
 const sanitizePayload = (resource: ResourceKey, payload: Record<string, any>) => {
@@ -661,6 +1045,53 @@ const deleteRecord = (resource: ResourceKey, id: string) => {
   return clone(removed);
 };
 
+// Expose minimal helpers so tests can reuse the same in-memory fixtures.
+export const mswTestUtils = {
+  list(resource: ResourceKey) {
+    return clone(stores[resource]);
+  },
+  create(resource: ResourceKey, body: Record<string, any>) {
+    return createRecord(resource, body ?? {});
+  },
+  remove(resource: ResourceKey, id: string) {
+    return deleteRecord(resource, id);
+  },
+  listUsers() {
+    return mockUsers.map((user) => sanitizeUser(user));
+  },
+  getCurrentUser() {
+    return clone(currentUser);
+  },
+  setCurrentUser(selector: { email?: string; role?: string }) {
+    const candidate =
+      findUserByEmail(selector?.email ?? undefined) ?? findUserByRole(selector?.role ?? undefined);
+
+    if (!candidate) {
+      throw new Error(
+        `[MSW] Unable to locate mock user for selector ${JSON.stringify(selector ?? {})}`
+      );
+    }
+
+    currentUser = sanitizeUser(candidate);
+    return clone(currentUser);
+  },
+  getDashboard() {
+    return clone(principalDashboard);
+  },
+  setDashboard(
+    updater:
+      | Partial<typeof principalDashboard>
+      | ((current: typeof principalDashboard) => Partial<typeof principalDashboard>)
+  ) {
+    const next =
+      typeof updater === "function"
+        ? { ...principalDashboard, ...(updater(clone(principalDashboard)) ?? {}) }
+        : { ...principalDashboard, ...(updater ?? {}) };
+    Object.assign(principalDashboard, next);
+    return clone(principalDashboard);
+  },
+};
+
 // Simulation flags (toggle via query param or by editing these vars during dev)
 let simulateRefreshFailure = false;
 let simulateSessionExpiry = false;
@@ -689,30 +1120,36 @@ export async function createHandlers() {
         password?: string;
       };
       const { email, password } = body || {};
+      const candidate = findUserByEmail(email ?? null);
+      const isPasswordValid =
+        candidate && (candidate.password === undefined || candidate.password === password);
 
-      if (email === "superadmin@example.sch.id" && password === "Admin123!") {
-        const payload = {
-          accessToken: "mock-access-token",
-          refreshToken: "mock-refresh-token",
-          access_token: "mock-access-token",
-          refresh_token: "mock-refresh-token",
-          expiresIn: 3600,
-          refreshExpiresIn: 86400,
-          tokenType: "Bearer",
-          user: currentUser,
-        };
-
-        return HttpResponse.json(
-          {
-            ...payload,
-            data: payload,
-            result: payload,
-          },
-          { status: 200 }
-        );
+      if (!candidate || !isPasswordValid) {
+        return HttpResponse.json({ message: "Invalid email or password" }, { status: 401 });
       }
 
-      return HttpResponse.json({ message: "Invalid email or password" }, { status: 401 });
+      const sanitized = sanitizeUser(candidate);
+      currentUser = sanitized;
+
+      const payload = {
+        accessToken: `mock-access-token-${candidate.id}`,
+        refreshToken: `mock-refresh-token-${candidate.id}`,
+        access_token: `mock-access-token-${candidate.id}`,
+        refresh_token: `mock-refresh-token-${candidate.id}`,
+        expiresIn: 3600,
+        refreshExpiresIn: 86400,
+        tokenType: "Bearer",
+        user: sanitized,
+      };
+
+      return HttpResponse.json(
+        {
+          ...payload,
+          data: payload,
+          result: payload,
+        },
+        { status: 200 }
+      );
     }),
 
     http.get(authMeRegex, ({ request }) => {
@@ -723,7 +1160,10 @@ export async function createHandlers() {
       return HttpResponse.json(currentUser, { status: 200 });
     }),
 
-    http.post(authLogoutRegex, () => HttpResponse.json({ success: true }, { status: 200 })),
+    http.post(authLogoutRegex, () => {
+      currentUser = sanitizeUser(mockUsers[0]);
+      return HttpResponse.json({ success: true }, { status: 200 });
+    }),
 
     http.post(authRefreshRegex, async ({ request }) => {
       const url = new URL(request.url);
@@ -740,6 +1180,10 @@ export async function createHandlers() {
         { status: 200 }
       );
     }),
+
+    http.get(/\/api(?:\/v1)?\/dashboard\/academics$/, () =>
+      HttpResponse.json(principalDashboard, { status: 200 })
+    ),
 
     http.get(resourcePathRegex, ({ request }) => {
       const parsed = parseResourceRequest(request);
@@ -798,3 +1242,7 @@ export async function createHandlers() {
     ),
   ];
 }
+
+const defaultHandlers = await createHandlers();
+
+export default defaultHandlers;
