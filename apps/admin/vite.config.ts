@@ -7,12 +7,8 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
-      // In development, use source files for HMR
-      // In production build, use compiled dist for proper module resolution
-      "@shared":
-        mode === "production"
-          ? path.resolve(__dirname, "../shared/dist")
-          : path.resolve(__dirname, "../shared/src"),
+      // Always point to source to keep MSW fixtures & types in sync
+      "@shared": path.resolve(__dirname, "../shared/src"),
     },
   },
   server: {

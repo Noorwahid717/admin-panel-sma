@@ -28,6 +28,8 @@ const sanitizeBaseUrl = (rawUrl?: string) => {
   return "http://localhost:3000/api/v1";
 };
 
+const ENABLE_MSW = import.meta.env.VITE_ENABLE_MSW === "true";
+
 const envBaseUrl = sanitizeBaseUrl(import.meta.env.VITE_API_URL);
 
 const API_BASE_URL = (() => {
@@ -38,8 +40,21 @@ const API_BASE_URL = (() => {
   try {
     const origin = window.location.origin.replace(/\/+$/, "");
     const isSameOrigin = envBaseUrl.startsWith(origin);
+    const fallback = `${origin}/api`;
+
+    if (ENABLE_MSW) {
+      if (envBaseUrl !== fallback) {
+        console.warn(
+          "[dataProvider] Overriding API base for MSW (enable flag):",
+          envBaseUrl,
+          "→",
+          fallback
+        );
+      }
+      return fallback;
+    }
+
     if (import.meta.env.DEV && !isSameOrigin) {
-      const fallback = `${origin}/api`;
       console.warn(
         "[dataProvider] Overriding API base for MSW development:",
         envBaseUrl,

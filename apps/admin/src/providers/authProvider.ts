@@ -19,7 +19,28 @@ const sanitizeBaseUrl = (rawUrl?: string) => {
   return "http://localhost:3000/api/v1";
 };
 
-const API_URL = sanitizeBaseUrl(import.meta.env.VITE_API_URL);
+const ENABLE_MSW = import.meta.env.VITE_ENABLE_MSW === "true";
+
+const API_URL = (() => {
+  const base = sanitizeBaseUrl(import.meta.env.VITE_API_URL);
+
+  if (ENABLE_MSW) {
+    try {
+      if (typeof window !== "undefined" && window.location?.origin) {
+        const origin = window.location.origin.replace(/\/+$/, "");
+        const fallback = `${origin}/api`;
+        if (base !== fallback) {
+          console.warn("[authProvider] Overriding API base for MSW:", base, "→", fallback);
+        }
+        return fallback;
+      }
+    } catch {
+      // ignore and fall through
+    }
+  }
+
+  return base;
+})();
 
 // Expose resolved API URL in console so we can verify runtime base in production
 try {

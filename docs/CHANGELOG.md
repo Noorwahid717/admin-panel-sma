@@ -1,5 +1,36 @@
 # Changelog - Build & Runtime Fixes
 
+## [2025-10-15] - MSW Mock API Revamp + Documentation ✅
+
+### 🎯 Objective
+
+Menjadikan lapisan MSW siap pakai untuk pengembangan frontend dengan seed data realistis sekaligus
+menyediakan dokumentasi resmi bagi tim.
+
+### ✏️ Changes
+
+1. Membuat generator `apps/admin/src/mocks/seed.ts` untuk memproduksi dataset ±300 siswa,
+   32 guru, jadwal, nilai, absensi, mutasi, dan arsip yang konsisten.
+2. Memigrasikan `handlers.ts` ke seed baru, menambahkan dukungan filter/sort/pagination ala
+   React Admin, serta menyesuaikan akun mock dinamis.
+3. Menyegarkan `mswTestUtils` dan skenario Vitest agar tidak bergantung pada ID hard-coded.
+4. Menulis ulang `docs/MSW-with-seed-data.md` serta menandai checklist
+   `Dokumentasi MSW + seed data (frontend dev)` sebagai selesai.
+5. Menambahkan flag `VITE_ENABLE_MSW` (aktif di Vercel preview) sehingga staging dapat memakai MSW
+   tanpa backend.
+
+### 🔍 Verification
+
+- `pnpm --filter @apps/admin test -- --run`
+- `pnpm --filter @apps/admin build`
+- `pnpm dev` menampilkan admin panel dengan MSW aktif menggunakan seed terbaru.
+- Login sebagai `superadmin@harapannusantara.sch.id` menampilkan data siswa/guru lengkap.
+
+### 📚 Related Documentation
+
+- `docs/MSW-with-seed-data.md`
+- `docs/checklist.md`
+
 ## [2025-10-04] - Major Build System Refactoring ✅
 
 ### 🎯 Objective

@@ -2,5 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pnpm install && pnpm --filter @apps/shared build && pnpm --filter @apps/admin build",
   "outputDirectory": "apps/admin/dist",
-  "installCommand": "pnpm install"
+  "installCommand": "pnpm install",
+  "preview": {
+    "env": {
+      "VITE_ENABLE_MSW": "true"
+    }
+  }
 }

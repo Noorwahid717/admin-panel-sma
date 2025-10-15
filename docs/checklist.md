@@ -35,6 +35,7 @@
 - [ ] Backup & restore percobaan
 - [ ] Rate limit & kebijakan password
 - [ ] README dev + arsitektur + deploy
+- [x] Dokumentasi MSW + seed data (frontend dev)
 - [ ] SOP pengguna (PDF)
 - [x] Jadwal overlap test
 - [x] Nilai weighted test

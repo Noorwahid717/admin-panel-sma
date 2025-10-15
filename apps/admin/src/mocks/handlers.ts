@@ -1,670 +1,36 @@
 import { http, HttpResponse } from "msw";
+import { createSeedData } from "./seed";
 
 /**
- * Scenario: SMA Negeri Harapan Nusantara (Tahun Pelajaran 2024/2025)
+ * Skenario MSW: SMA Negeri Harapan Nusantara (TP 2024/2025)
  *
- * Struktur semester dan penjadwalan mengikuti kalender pendidikan provinsi
- * (contoh: Kalender Pendidikan DKI Jakarta 2024/2025) dan implementasi Kurikulum
- * Merdeka sesuai Permendikbudristek No. 56/M/2022. Data guru menggunakan format
- * NIP 18 digit, kelas level 10-12 (X, XI, XII), serta komponen nilai berbobot 100%.
+ * Dataset dihasilkan melalui generator seed agar merepresentasikan kondisi realistis:
+ * - 2 term akademik
+ * - 15 mata pelajaran
+ * - 10 kelas aktif (X-XII, IPA & IPS)
+ * - ±300 siswa dengan status dan wali
+ * - Jadwal, nilai, absensi, mutasi, arsip, dan dashboard kepala sekolah
  */
 
-const students = [
-  {
-    id: "stu_aditya_wijaya",
-    nis: "2024-010",
-    fullName: "Aditya Wijaya",
-    birthDate: "2008-11-20",
-    gender: "M",
-    guardian: "Bambang Wijaya",
-    guardianPhone: "081234567890",
-  },
-  {
-    id: "stu_sri_rahayu",
-    nis: "2024-011",
-    fullName: "Sri Rahayu",
-    birthDate: "2009-03-12",
-    gender: "F",
-    guardian: "Sulastri",
-    guardianPhone: "081345678901",
-  },
-  {
-    id: "stu_nabila_pratiwi",
-    nis: "2024-012",
-    fullName: "Nabila Pratiwi",
-    birthDate: "2008-08-04",
-    gender: "F",
-    guardian: "Hendra Pratama",
-    guardianPhone: "081356789012",
-  },
-  {
-    id: "stu_raffael_putra",
-    nis: "2024-013",
-    fullName: "Raffael Putra",
-    birthDate: "2009-02-01",
-    gender: "M",
-    guardian: "Yuliana Putri",
-    guardianPhone: "081367890123",
-  },
-];
+const seed = createSeedData();
 
-const teachers = [
-  {
-    id: "tch_marta_siregar",
-    fullName: "Ibu Marta Siregar",
-    nip: "19781212 200501 2 001",
-    email: "marta.siregar@harapannusantara.sch.id",
-    phone: "081234567890",
-  },
-  {
-    id: "tch_budi_hartono",
-    fullName: "Pak Budi Hartono",
-    nip: "19790524 200701 1 002",
-    email: "budi.hartono@harapannusantara.sch.id",
-    phone: "081245678901",
-  },
-  {
-    id: "tch_dewi_lestari",
-    fullName: "Ibu Dewi Lestari",
-    nip: "19830615 200902 2 003",
-    email: "dewi.lestari@harapannusantara.sch.id",
-    phone: "081256789012",
-  },
-  {
-    id: "tch_fajar_rahman",
-    fullName: "Pak Fajar Rahman",
-    nip: "19850808 201003 1 004",
-    email: "fajar.rahman@harapannusantara.sch.id",
-    phone: "081267890123",
-  },
-];
-
-const classes = [
-  {
-    id: "class_x_ipa_1",
-    name: "Kelas X IPA 1",
-    level: 10,
-    homeroomId: "tch_marta_siregar",
-    termId: "term_2024_ganjil",
-  },
-  {
-    id: "class_xi_ips_1",
-    name: "Kelas XI IPS 1",
-    level: 11,
-    homeroomId: "tch_budi_hartono",
-    termId: "term_2024_ganjil",
-  },
-  {
-    id: "class_xii_ipa_1",
-    name: "Kelas XII IPA 1",
-    level: 12,
-    homeroomId: "tch_dewi_lestari",
-    termId: "term_2024_ganjil",
-  },
-];
-
-const subjects = [
-  { id: "sub_mat_xa", code: "MAT-XA", name: "Matematika Wajib" },
-  { id: "sub_bin_xa", code: "BIN-XA", name: "Bahasa Indonesia" },
-  { id: "sub_fis_xa", code: "FIS-XA", name: "Fisika" },
-  { id: "sub_sos_xi", code: "SOS-XI", name: "Sosiologi" },
-];
-
-const terms = [
-  {
-    id: "term_2024_ganjil",
-    name: "TP 2024/2025 - Semester Ganjil",
-    startDate: "2024-07-15",
-    endDate: "2024-12-21",
-    active: true,
-  },
-  {
-    id: "term_2024_genap",
-    name: "TP 2024/2025 - Semester Genap",
-    startDate: "2025-01-06",
-    endDate: "2025-06-21",
-    active: false,
-  },
-];
-
-const enrollments = [
-  {
-    id: "enr_aditya_xipa",
-    studentId: "stu_aditya_wijaya",
-    classId: "class_x_ipa_1",
-    termId: "term_2024_ganjil",
-  },
-  {
-    id: "enr_sri_xipa",
-    studentId: "stu_sri_rahayu",
-    classId: "class_x_ipa_1",
-    termId: "term_2024_ganjil",
-  },
-  {
-    id: "enr_nabila_xiips",
-    studentId: "stu_nabila_pratiwi",
-    classId: "class_xi_ips_1",
-    termId: "term_2024_ganjil",
-  },
-  {
-    id: "enr_raffael_xiips",
-    studentId: "stu_raffael_putra",
-    classId: "class_xi_ips_1",
-    termId: "term_2024_ganjil",
-  },
-];
-
-const gradeComponents = [
-  {
-    id: "gc_mat_mid",
-    name: "Penilaian Tengah Semester",
-    weight: 40,
-    classSubjectId: "cs_xipa_mat",
-    kkm: 70,
-    description: "Ujian tengah semester matematika",
-  },
-  {
-    id: "gc_mat_final",
-    name: "Penilaian Akhir Semester",
-    weight: 60,
-    classSubjectId: "cs_xipa_mat",
-    kkm: 70,
-    description: "Ujian akhir semester matematika",
-  },
-  {
-    id: "gc_sos_project",
-    name: "Projek Sosial",
-    weight: 50,
-    classSubjectId: "cs_xiips_sos",
-    kkm: 75,
-    description: "Projek kolaboratif",
-  },
-  {
-    id: "gc_sos_exam",
-    name: "Penilaian Akhir Semester",
-    weight: 50,
-    classSubjectId: "cs_xiips_sos",
-    kkm: 75,
-    description: "Evaluasi akhir semester",
-  },
-];
-
-const gradeConfigs = [
-  {
-    id: "gcfg_cs_xipa_mat",
-    classSubjectId: "cs_xipa_mat",
-    scheme: "WEIGHTED",
-    kkm: 70,
-    status: "draft",
-  },
-  {
-    id: "gcfg_cs_xiips_sos",
-    classSubjectId: "cs_xiips_sos",
-    scheme: "AVERAGE",
-    kkm: 75,
-    status: "finalized",
-  },
-];
-
-const grades = [
-  {
-    id: "grade_aditya_mid_mat",
-    enrollmentId: "enr_aditya_xipa",
-    subjectId: "sub_mat_xa",
-    componentId: "gc_mat_mid",
-    score: 82,
-    teacherId: "tch_marta_siregar",
-  },
-  {
-    id: "grade_aditya_final_mat",
-    enrollmentId: "enr_aditya_xipa",
-    subjectId: "sub_mat_xa",
-    componentId: "gc_mat_final",
-    score: 88,
-    teacherId: "tch_marta_siregar",
-  },
-  {
-    id: "grade_sri_mid_mat",
-    enrollmentId: "enr_sri_xipa",
-    subjectId: "sub_mat_xa",
-    componentId: "gc_mat_mid",
-    score: 90,
-    teacherId: "tch_marta_siregar",
-  },
-  {
-    id: "grade_sri_final_mat",
-    enrollmentId: "enr_sri_xipa",
-    subjectId: "sub_mat_xa",
-    componentId: "gc_mat_final",
-    score: 92,
-    teacherId: "tch_marta_siregar",
-  },
-  {
-    id: "grade_nabila_project_sos",
-    enrollmentId: "enr_nabila_xiips",
-    subjectId: "sub_sos_xi",
-    componentId: "gc_sos_project",
-    score: 87,
-    teacherId: "tch_dewi_lestari",
-  },
-  {
-    id: "grade_nabila_exam_sos",
-    enrollmentId: "enr_nabila_xiips",
-    subjectId: "sub_sos_xi",
-    componentId: "gc_sos_exam",
-    score: 81,
-    teacherId: "tch_dewi_lestari",
-  },
-];
-
-const attendance = [
-  {
-    id: "att_aditya_2024-08-05",
-    enrollmentId: "enr_aditya_xipa",
-    date: "2024-08-05",
-    sessionType: "Harian",
-    status: "H",
-    subjectId: "sub_mat_xa",
-    teacherId: "tch_marta_siregar",
-  },
-  {
-    id: "att_sri_2024-08-05",
-    enrollmentId: "enr_sri_xipa",
-    date: "2024-08-05",
-    sessionType: "Harian",
-    status: "I",
-    subjectId: "sub_mat_xa",
-    teacherId: "tch_marta_siregar",
-  },
-  {
-    id: "att_nabila_2024-08-12",
-    enrollmentId: "enr_nabila_xiips",
-    date: "2024-08-12",
-    sessionType: "Mapel",
-    status: "H",
-    subjectId: "sub_sos_xi",
-    teacherId: "tch_dewi_lestari",
-  },
-];
-
-const classSubjects = [
-  {
-    id: "cs_xipa_mat",
-    classroomId: "class_x_ipa_1",
-    subjectId: "sub_mat_xa",
-    teacherId: "tch_marta_siregar",
-    termId: "term_2024_ganjil",
-  },
-  {
-    id: "cs_xipa_bin",
-    classroomId: "class_x_ipa_1",
-    subjectId: "sub_bin_xa",
-    teacherId: "tch_budi_hartono",
-    termId: "term_2024_ganjil",
-  },
-  {
-    id: "cs_xiips_sos",
-    classroomId: "class_xi_ips_1",
-    subjectId: "sub_sos_xi",
-    teacherId: "tch_dewi_lestari",
-    termId: "term_2024_ganjil",
-  },
-];
-
-const schedules = [
-  {
-    id: "sch_xipa_mat_mon",
-    classSubjectId: "cs_xipa_mat",
-    dayOfWeek: 1,
-    startTime: "07:30",
-    endTime: "09:00",
-    room: "Ruang 101",
-  },
-  {
-    id: "sch_xipa_bin_mon",
-    classSubjectId: "cs_xipa_bin",
-    dayOfWeek: 1,
-    startTime: "09:15",
-    endTime: "10:45",
-    room: "Ruang 101",
-  },
-  {
-    id: "sch_xiips_sos_tue",
-    classSubjectId: "cs_xiips_sos",
-    dayOfWeek: 2,
-    startTime: "08:00",
-    endTime: "09:30",
-    room: "Ruang 203",
-  },
-];
-
-const announcements = [
-  {
-    id: "ann_general",
-    title: "Pembagian Rapor Semester",
-    body: "Pembagian rapor dilaksanakan Jumat, 20 Desember 2024 pukul 08:00 di aula sekolah.",
-    audience: "ALL",
-    publishAt: "2024-12-15T08:00:00.000Z",
-    publishedAt: "2024-12-15T08:05:00.000Z",
-    authorId: "user_superadmin",
-  },
-  {
-    id: "ann_teachers",
-    title: "Workshop Kurikulum Merdeka",
-    body: "Seluruh guru diundang mengikuti workshop pada 5 Januari 2025.",
-    audience: "TEACHERS",
-    publishAt: "2024-12-18T09:00:00.000Z",
-    publishedAt: "2024-12-18T09:10:00.000Z",
-    authorId: "user_superadmin",
-  },
-  {
-    id: "ann_students",
-    title: "Lomba Sains",
-    body: "Pendaftaran lomba sains dibuka hingga 10 Januari 2025.",
-    audience: "STUDENTS",
-    publishAt: "2024-12-10T07:30:00.000Z",
-    publishedAt: "2024-12-10T07:35:00.000Z",
-    authorId: "user_superadmin",
-  },
-];
-
-const behaviorNotes = [
-  {
-    id: "bn_aditya_1",
-    studentId: "stu_aditya_wijaya",
-    classroomId: "class_x_ipa_1",
-    createdById: "user_superadmin",
-    date: "2024-08-20",
-    category: "Kedisiplinan",
-    note: "Terlambat masuk kelas sebanyak 2 kali minggu ini.",
-  },
-  {
-    id: "bn_sri_1",
-    studentId: "stu_sri_rahayu",
-    classroomId: "class_x_ipa_1",
-    createdById: "user_superadmin",
-    date: "2024-08-22",
-    category: "Prestasi",
-    note: "Menjadi juara lomba debat antar kelas.",
-  },
-  {
-    id: "bn_nabila_1",
-    studentId: "stu_nabila_pratiwi",
-    classroomId: "class_xi_ips_1",
-    createdById: "user_superadmin",
-    date: "2024-08-18",
-    category: "Kedisiplinan",
-    note: "Perlu bimbingan terkait pengerjaan tugas tepat waktu.",
-  },
-];
-
-const mutations = [
-  {
-    id: "mut_in_aditya",
-    studentId: "stu_aditya_wijaya",
-    studentName: "Aditya Wijaya",
-    type: "IN",
-    effectiveDate: "2024-08-01",
-    fromClassId: null,
-    fromClassName: null,
-    toClassId: "class_x_ipa_1",
-    toClassName: "Kelas X IPA 1",
-    reason: "Mutasi dari sekolah lain mengikuti orang tua berpindah tugas.",
-    handledById: "tch_marta_siregar",
-    handledByName: "Ibu Marta Siregar",
-    auditTrail: [
-      {
-        id: "audit_mut_in_aditya_initiated",
-        timestamp: "2024-07-25T08:20:00.000Z",
-        actorId: "user_superadmin",
-        actorName: "Super Admin",
-        action: "REQUEST_RECEIVED",
-        details: "Permohonan mutasi diterima dari orang tua.",
-      },
-      {
-        id: "audit_mut_in_aditya_verified",
-        timestamp: "2024-07-28T13:45:00.000Z",
-        actorId: "user_superadmin",
-        actorName: "Super Admin",
-        action: "DOCUMENT_VERIFIED",
-        details: "Dokumen asli rapor & surat pindah diverifikasi.",
-      },
-      {
-        id: "audit_mut_in_aditya_completed",
-        timestamp: "2024-08-01T01:00:00.000Z",
-        actorId: "user_superadmin",
-        actorName: "Super Admin",
-        action: "ENROLLMENT_CREATED",
-        details: "Siswa resmi terdaftar di Kelas X IPA 1.",
-      },
-    ],
-  },
-  {
-    id: "mut_out_nabila",
-    studentId: "stu_nabila_pratiwi",
-    studentName: "Nabila Pratiwi",
-    type: "OUT",
-    effectiveDate: "2024-09-10",
-    fromClassId: "class_xi_ips_1",
-    fromClassName: "Kelas XI IPS 1",
-    toClassId: null,
-    toClassName: null,
-    reason: "Mengikuti orang tua pindah tugas keluar kota.",
-    handledById: "tch_budi_hartono",
-    handledByName: "Pak Budi Hartono",
-    auditTrail: [
-      {
-        id: "audit_mut_out_nabila_requested",
-        timestamp: "2024-09-01T03:30:00.000Z",
-        actorId: "user_superadmin",
-        actorName: "Super Admin",
-        action: "REQUEST_SUBMITTED",
-        details: "Orang tua mengajukan surat pengantar mutasi.",
-      },
-      {
-        id: "audit_mut_out_nabila_cleared",
-        timestamp: "2024-09-05T02:15:00.000Z",
-        actorId: "user_superadmin",
-        actorName: "Super Admin",
-        action: "CLEARANCE_COMPLETED",
-        details: "Wali kelas dan bendahara menyelesaikan proses clearance.",
-      },
-      {
-        id: "audit_mut_out_nabila_released",
-        timestamp: "2024-09-10T01:45:00.000Z",
-        actorId: "user_superadmin",
-        actorName: "Super Admin",
-        action: "RECORD_RELEASED",
-        details: "Dokumen mutasi dan arsip rapor diunggah dan dibagikan.",
-      },
-    ],
-  },
-  {
-    id: "mut_internal_sri",
-    studentId: "stu_sri_rahayu",
-    studentName: "Sri Rahayu",
-    type: "INTERNAL",
-    effectiveDate: "2024-08-18",
-    fromClassId: "class_x_ipa_1",
-    fromClassName: "Kelas X IPA 1",
-    toClassId: "class_x_ipa_1",
-    toClassName: "Kelas X IPA 1",
-    reason: "Pergantian jalur peminatan dengan jadwal berbeda.",
-    handledById: "tch_marta_siregar",
-    handledByName: "Ibu Marta Siregar",
-    auditTrail: [
-      {
-        id: "audit_mut_internal_sri_review",
-        timestamp: "2024-08-10T04:10:00.000Z",
-        actorId: "user_superadmin",
-        actorName: "Super Admin",
-        action: "REVIEW_COMPLETED",
-        details: "Konselor menyetujui perubahan jalur peminatan.",
-      },
-      {
-        id: "audit_mut_internal_sri_schedule",
-        timestamp: "2024-08-15T02:50:00.000Z",
-        actorId: "user_superadmin",
-        actorName: "Super Admin",
-        action: "SCHEDULE_UPDATED",
-        details: "Jadwal mata pelajaran diperbarui tanpa konflik.",
-      },
-    ],
-  },
-];
-
-const archives = [
-  {
-    id: "archive_rapor_term_ganjil",
-    termId: "term_2024_ganjil",
-    termName: "TP 2024/2025 - Semester Ganjil",
-    type: "REPORT_PDF",
-    label: "Rapor Semester Ganjil 2024/2025",
-    format: "zip",
-    fileName: "rapor_ganjil_2024-2025.zip",
-    fileSize: 104857600,
-    checksum: "f3a8d1c4",
-    downloadUrl: "https://example-cdn.local/files/rapor_ganjil_2024-2025.zip",
-    generatedAt: "2024-12-22T02:15:00.000Z",
-    generatedBy: "user_superadmin",
-  },
-  {
-    id: "archive_absensi_term_ganjil",
-    termId: "term_2024_ganjil",
-    termName: "TP 2024/2025 - Semester Ganjil",
-    type: "ATTENDANCE_CSV",
-    label: "Absensi Harian Semester Ganjil 2024/2025",
-    format: "csv",
-    fileName: "absensi_ganjil_2024-2025.csv",
-    fileSize: 2097152,
-    checksum: "c9e2a7b1",
-    downloadUrl: "https://example-cdn.local/files/absensi_ganjil_2024-2025.csv",
-    generatedAt: "2024-12-21T10:45:00.000Z",
-    generatedBy: "user_superadmin",
-  },
-  {
-    id: "archive_rapor_midterm",
-    termId: "term_2024_ganjil",
-    termName: "TP 2024/2025 - Semester Ganjil",
-    type: "REPORT_PDF",
-    label: "Progress Report Tengah Semester",
-    format: "pdf",
-    fileName: "progress_report_midterm.pdf",
-    fileSize: 5242880,
-    checksum: "a1b2c3d4",
-    downloadUrl: "https://example-cdn.local/files/progress_report_midterm.pdf",
-    generatedAt: "2024-10-15T07:30:00.000Z",
-    generatedBy: "user_superadmin",
-  },
-];
-
-const principalDashboard = {
-  termId: "term_2024_ganjil",
-  updatedAt: "2024-09-01T02:00:00.000Z",
-  distribution: {
-    overallAverage: 85.6,
-    totalStudents: 96,
-    byRange: [
-      { range: "90-100", count: 18 },
-      { range: "80-89", count: 42 },
-      { range: "70-79", count: 26 },
-      { range: "<70", count: 10 },
-    ],
-    byClass: [
-      {
-        classId: "class_x_ipa_1",
-        className: "Kelas X IPA 1",
-        average: 87.4,
-        highest: 96,
-        lowest: 72,
-      },
-      {
-        classId: "class_xi_ips_1",
-        className: "Kelas XI IPS 1",
-        average: 83.1,
-        highest: 94,
-        lowest: 68,
-      },
-      {
-        classId: "class_xii_ipa_1",
-        className: "Kelas XII IPA 1",
-        average: 86.3,
-        highest: 97,
-        lowest: 74,
-      },
-    ],
-  },
-  outliers: [
-    {
-      studentId: "stu_sri_rahayu",
-      studentName: "Sri Rahayu",
-      classId: "class_x_ipa_1",
-      className: "Kelas X IPA 1",
-      subjectId: "sub_mat_xa",
-      subjectName: "Matematika Wajib",
-      zScore: 2.3,
-      score: 98,
-      trend: "UP",
-      lastUpdated: "2024-08-22T08:30:00.000Z",
-    },
-    {
-      studentId: "stu_nabila_pratiwi",
-      studentName: "Nabila Pratiwi",
-      classId: "class_xi_ips_1",
-      className: "Kelas XI IPS 1",
-      subjectId: "sub_sos_xi",
-      subjectName: "Sosiologi",
-      zScore: -2.1,
-      score: 62,
-      trend: "DOWN",
-      lastUpdated: "2024-08-20T09:15:00.000Z",
-    },
-  ],
-  remedial: [
-    {
-      studentId: "stu_raffael_putra",
-      studentName: "Raffael Putra",
-      classId: "class_xi_ips_1",
-      className: "Kelas XI IPS 1",
-      subjectId: "sub_sos_xi",
-      subjectName: "Sosiologi",
-      score: 68,
-      kkm: 75,
-      attempts: 1,
-      lastAttempt: "2024-08-18",
-    },
-    {
-      studentId: "stu_nabila_pratiwi",
-      studentName: "Nabila Pratiwi",
-      classId: "class_xi_ips_1",
-      className: "Kelas XI IPS 1",
-      subjectId: "sub_mat_xa",
-      subjectName: "Matematika Wajib",
-      score: 65,
-      kkm: 70,
-      attempts: 2,
-      lastAttempt: "2024-08-19",
-    },
-  ],
-  attendance: {
-    overall: 95.4,
-    byClass: [
-      { classId: "class_x_ipa_1", className: "Kelas X IPA 1", percentage: 96.8 },
-      { classId: "class_xi_ips_1", className: "Kelas XI IPS 1", percentage: 94.1 },
-      { classId: "class_xii_ipa_1", className: "Kelas XII IPA 1", percentage: 95.2 },
-    ],
-    alerts: [
-      {
-        classId: "class_xi_ips_1",
-        className: "Kelas XI IPS 1",
-        indicator: "ABSENCE_SPIKE",
-        percentage: 88.5,
-        week: "2024-W33",
-      },
-    ],
-  },
-};
-
+const terms = [...seed.terms];
+const subjects = [...seed.subjects];
+const teachers = [...seed.teachers];
+const classes = [...seed.classes];
+const students = [...seed.students];
+const enrollments = [...seed.enrollments];
+const classSubjects = [...seed.classSubjects];
+const schedules = [...seed.schedules];
+const gradeComponents = [...seed.gradeComponents];
+const gradeConfigs = [...seed.gradeConfigs];
+const grades = [...seed.grades];
+const attendance = [...seed.attendance];
+const announcements = [...seed.announcements];
+const behaviorNotes = [...seed.behaviorNotes];
+const mutations = [...seed.mutations];
+const archives = [...seed.archives];
+const principalDashboard = { ...seed.dashboard };
 type MockUserRecord = {
   id: string;
   email: string;
@@ -685,6 +51,29 @@ type MockUserRecord = {
 
 const DEFAULT_PASSWORD = "Admin123!";
 
+const toLocalPart = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/\.+/g, ".")
+    .replace(/^\.|\.$/g, "");
+
+const homeroomClass = classes.find((klass) => klass.id === "class_x_ipa_1") ?? classes[0];
+const homeroomTeacher =
+  teachers.find((teacher) => teacher.id === homeroomClass?.homeroomId) ?? teachers[0];
+const mathSubject = subjects.find((subject) => subject.code === "MAT") ?? subjects[0];
+const mathTeacher =
+  teachers.find((teacher) => teacher.mainSubjectId === mathSubject.id) ?? teachers[1];
+const principalTeacher =
+  teachers.find((teacher) => teacher.fullName.toLowerCase().includes("surya")) ?? teachers[2];
+const sampleStudent =
+  students.find((student) => student.id === "stu_aditya_wijaya") ??
+  students.find((student) => student.status === "active") ??
+  students[0];
+const sampleClass = classes.find((klass) => klass.id === sampleStudent.classId) ?? classes[0];
+const guardianName = sampleStudent.guardian ?? "Orang Tua";
+const guardianEmailLocal = `${toLocalPart(guardianName)}.${toLocalPart(sampleStudent.fullName.split(" ").slice(-1)[0] ?? "wali")}`;
+
 const mockUsers: MockUserRecord[] = [
   {
     id: "user_superadmin",
@@ -704,42 +93,44 @@ const mockUsers: MockUserRecord[] = [
     id: "user_kepsek",
     email: "kepsek@harapannusantara.sch.id",
     password: DEFAULT_PASSWORD,
-    fullName: "Drs. Wirawan Surya",
+    fullName: principalTeacher.fullName.replace(/^Pak |^Ibu /, "Drs. "),
     role: "KEPALA_SEKOLAH",
+    teacherId: principalTeacher.id,
   },
   {
     id: "user_wali_kelas",
-    email: "wali.kelas@harapannusantara.sch.id",
+    email: `wali.${toLocalPart(homeroomClass.code)}@harapannusantara.sch.id`,
     password: DEFAULT_PASSWORD,
-    fullName: "Marta Siregar",
+    fullName: homeroomTeacher.fullName.replace(/^Pak |^Ibu /, ""),
     role: "WALI_KELAS",
-    teacherId: "tch_marta_siregar",
-    classId: "class_x_ipa_1",
+    teacherId: homeroomTeacher.id,
+    classId: homeroomClass.id,
   },
   {
     id: "user_guru_mapel",
-    email: "guru.mapel@harapannusantara.sch.id",
+    email: `guru.${toLocalPart(mathSubject.code)}@harapannusantara.sch.id`,
     password: DEFAULT_PASSWORD,
-    fullName: "Budi Hartono",
+    fullName: mathTeacher.fullName.replace(/^Pak |^Ibu /, ""),
     role: "GURU_MAPEL",
-    teacherId: "tch_budi_hartono",
+    teacherId: mathTeacher.id,
   },
   {
     id: "user_siswa",
-    email: "siswa.aditya@harapannusantara.sch.id",
+    email: `${toLocalPart(sampleStudent.fullName)}@harapannusantara.sch.id`,
     password: DEFAULT_PASSWORD,
-    fullName: "Aditya Wijaya",
+    fullName: sampleStudent.fullName,
     role: "SISWA",
-    studentId: "stu_aditya_wijaya",
-    classId: "class_x_ipa_1",
+    studentId: sampleStudent.id,
+    classId: sampleClass.id,
   },
   {
     id: "user_ortu",
-    email: "ortu.aditya@harapannusantara.sch.id",
+    email: `${guardianEmailLocal}@harapannusantara.sch.id`,
     password: DEFAULT_PASSWORD,
-    fullName: "Bambang Wijaya",
+    fullName: guardianName,
     role: "ORTU",
-    studentId: "stu_aditya_wijaya",
+    studentId: sampleStudent.id,
+    classId: sampleClass.id,
   },
 ];
 
@@ -775,6 +166,8 @@ const resourceKeys = [
   "attendance",
   "class-subjects",
   "schedules",
+  "announcements",
+  "behavior-notes",
   "mutations",
   "archives",
   "dashboard",
@@ -803,7 +196,7 @@ const stores: Record<ResourceKey, Record<string, any>[]> = {
 };
 
 const resourcePathRegex =
-  /\/api(?:\/v1)?\/(students|teachers|classes|subjects|terms|enrollments|grade-components|grade-configs|grades|attendance|class-subjects|schedules|announcements|behavior-notes|mutations|archives|dashboard)(?:\/([^/?]+))?\/?$/;
+  /\/(?:api(?:\/v1)?)?\/?(students|teachers|classes|subjects|terms|enrollments|grade-components|grade-configs|grades|attendance|class-subjects|schedules|announcements|behavior-notes|mutations|archives|dashboard)(?:\/([^/?]+))?\/?$/;
 
 const parseResourceRequest = (request: Request) => {
   const url = new URL(request.url);
@@ -993,6 +386,144 @@ const collectIds = (url: URL) => {
   return ids;
 };
 
+const getValue = (record: Record<string, any>, path: string) => {
+  return path
+    .split(".")
+    .reduce<any>((acc, key) => (acc && typeof acc === "object" ? acc[key] : undefined), record);
+};
+
+const parseFilters = (url: URL) => {
+  const ignored = new Set([
+    "filter",
+    "_page",
+    "_perPage",
+    "page",
+    "perPage",
+    "_start",
+    "_end",
+    "_sort",
+    "_order",
+    "sort",
+    "order",
+    "ids",
+    "ids[]",
+    "limit",
+    "cursor",
+    "skip",
+    "take",
+    "offset",
+    "current",
+    "pageSize",
+  ]);
+
+  const filters: Record<string, unknown> = {};
+  const filterParam = url.searchParams.get("filter");
+  if (filterParam) {
+    try {
+      const parsed = JSON.parse(filterParam);
+      if (parsed && typeof parsed === "object") {
+        Object.assign(filters, parsed as Record<string, unknown>);
+      }
+    } catch {
+      // ignore invalid JSON
+    }
+  }
+
+  url.searchParams.forEach((value, key) => {
+    if (ignored.has(key) || key.startsWith("ids[")) return;
+    if (value === null || value === "") return;
+    if (typeof filters[key] === "undefined") {
+      filters[key] = value;
+    }
+  });
+
+  return filters;
+};
+
+const applyFilters = (records: Record<string, any>[], filters: Record<string, unknown>) => {
+  const entries = Object.entries(filters ?? {}).filter(
+    ([, expected]) => expected !== undefined && expected !== null && expected !== ""
+  );
+  if (entries.length === 0) {
+    return records;
+  }
+
+  return records.filter((record) =>
+    entries.every(([rawKey, expected]) => {
+      const isFuzzy = rawKey.endsWith("~");
+      const key = isFuzzy ? rawKey.slice(0, -1) : rawKey;
+      const actual = getValue(record, key);
+
+      if (expected === undefined || expected === null) return true;
+      if (Array.isArray(expected)) {
+        return expected.includes(actual);
+      }
+
+      if (typeof expected === "string") {
+        const normalizedExpected = expected.trim().toLowerCase();
+        if (normalizedExpected === "") return true;
+        const normalizedActual = String(actual ?? "")
+          .trim()
+          .toLowerCase();
+        return isFuzzy || normalizedExpected.length > 2
+          ? normalizedActual.includes(normalizedExpected)
+          : normalizedActual === normalizedExpected;
+      }
+
+      return String(actual ?? "") === String(expected);
+    })
+  );
+};
+
+const applySort = (records: Record<string, any>[], sortField: string | null, sortOrder: string) => {
+  if (!sortField) return records;
+  const direction = sortOrder === "DESC" ? -1 : 1;
+
+  return [...records].sort((a, b) => {
+    const valueA = getValue(a, sortField);
+    const valueB = getValue(b, sortField);
+    if (valueA === valueB) return 0;
+    if (valueA === undefined || valueA === null) return 1;
+    if (valueB === undefined || valueB === null) return -1;
+
+    if (typeof valueA === "number" && typeof valueB === "number") {
+      return valueA < valueB ? -1 * direction : direction;
+    }
+
+    const stringA = String(valueA).toLowerCase();
+    const stringB = String(valueB).toLowerCase();
+    if (stringA === stringB) return 0;
+    return stringA < stringB ? -1 * direction : direction;
+  });
+};
+
+const applyPagination = (records: Record<string, any>[], url: URL) => {
+  const total = records.length;
+  const startParam = url.searchParams.get("_start");
+  const endParam = url.searchParams.get("_end");
+
+  if (startParam !== null && endParam !== null) {
+    const start = Number(startParam);
+    const end = Number(endParam);
+    if (!Number.isNaN(start) && !Number.isNaN(end)) {
+      return { data: records.slice(start, end), total };
+    }
+  }
+
+  const pageParam = url.searchParams.get("_page") ?? url.searchParams.get("page");
+  const perPageParam = url.searchParams.get("_perPage") ?? url.searchParams.get("perPage");
+  const page = Number(pageParam ?? 1);
+  const perPage = Number(perPageParam ?? total);
+
+  if (Number.isNaN(page) || Number.isNaN(perPage) || perPage <= 0) {
+    return { data: records, total };
+  }
+
+  const startIndex = Math.max(0, (page - 1) * perPage);
+  const endIndex = startIndex + perPage;
+  return { data: records.slice(startIndex, endIndex), total };
+};
+
 const buildListResponse = (resource: ResourceKey, url: URL) => {
   const ids = collectIds(url);
   let items = stores[resource];
@@ -1001,15 +532,27 @@ const buildListResponse = (resource: ResourceKey, url: URL) => {
     items = items.filter((item) => idSet.has(String(item.id)));
   }
 
-  let result = clone(items);
+  const filters = parseFilters(url);
+  const sortField = url.searchParams.get("_sort") ?? url.searchParams.get("sort");
+  const sortOrder = (url.searchParams.get("_order") ?? url.searchParams.get("order") ?? "ASC")
+    .toString()
+    .toUpperCase();
+
+  let result = clone(items) as Record<string, any>[];
+  result = applyFilters(result, filters);
+  result = applySort(result, sortField, sortOrder);
 
   const limitParam = url.searchParams.get("limit");
-  const limit = limitParam ? Number(limitParam) : undefined;
-  if (limit && !Number.isNaN(limit)) {
-    result = result.slice(0, limit);
+  if (limitParam) {
+    const limit = Number(limitParam);
+    if (!Number.isNaN(limit) && limit > 0) {
+      return { data: result.slice(0, limit), total: result.length };
+    }
   }
 
-  return { data: result, total: items.length };
+  const paginated = applyPagination(result, url);
+
+  return { data: paginated.data, total: paginated.total };
 };
 
 const findRecord = (resource: ResourceKey, id: string | null) => {
@@ -1108,10 +651,10 @@ export function setSimulation({
 }
 
 export async function createHandlers() {
-  const authLoginRegex = /\/api(?:\/v1)?\/auth\/login$/;
-  const authMeRegex = /\/api(?:\/v1)?\/auth\/me$/;
-  const authLogoutRegex = /\/api(?:\/v1)?\/auth\/logout$/;
-  const authRefreshRegex = /\/api(?:\/v1)?\/auth\/refresh$/;
+  const authLoginRegex = /\/(?:api(?:\/v1)?)?\/auth\/login$/;
+  const authMeRegex = /\/(?:api(?:\/v1)?)?\/auth\/me$/;
+  const authLogoutRegex = /\/(?:api(?:\/v1)?)?\/auth\/logout$/;
+  const authRefreshRegex = /\/(?:api(?:\/v1)?)?\/auth\/refresh$/;
 
   return [
     http.post(authLoginRegex, async ({ request }) => {

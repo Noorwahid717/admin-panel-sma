@@ -260,6 +260,8 @@ const resourceRouteConfig: Record<
 };
 
 const dataProvider = resolveDataProvider();
+const ENABLE_MSW = import.meta.env.VITE_ENABLE_MSW === "true";
+const shouldStartMSW = import.meta.env.DEV || ENABLE_MSW;
 
 // Feature flag untuk mematikan layout kustom via env
 const disableCustomLayout = import.meta.env.VITE_DISABLE_CUSTOM_LAYOUT === "true";
@@ -278,7 +280,7 @@ const LayoutWrapper: React.FC = () =>
   );
 
 async function bootstrap() {
-  if (import.meta.env.DEV) {
+  if (shouldStartMSW) {
     try {
       // prefer a start helper if present, otherwise call worker.start()
       // @ts-ignore
@@ -297,7 +299,7 @@ async function bootstrap() {
         console.warn("MSW: couldn't find a start entry on ./mocks/browser", Object.keys(mswMod));
       }
       // eslint-disable-next-line no-console
-      console.info("MSW bootstrap complete (dev)");
+      console.info(`MSW bootstrap complete (${import.meta.env.DEV ? "dev" : "env flag"})`);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn("MSW failed to start:", err instanceof Error ? err.message : String(err));
