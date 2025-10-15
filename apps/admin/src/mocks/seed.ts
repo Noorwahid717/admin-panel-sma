@@ -914,10 +914,17 @@ function createGrades(
     mappings.forEach((mapping, subjectIndex) => {
       const components = gradeComponentMap.get(mapping.id) ?? [];
       components.forEach((component, componentIndex) => {
+        const seed =
+          enrollIndex * 37 +
+          subjectIndex * 19 +
+          componentIndex * 11 +
+          mapping.id.length * 5 +
+          component.id.length * 3;
         const baseScore =
-          65 +
-          ((enrollIndex * 3 + subjectIndex * 7 + componentIndex * 11) % 30) +
-          component.weight / 10;
+          60 +
+          ((seed % 41) +
+            Math.sin((seed % 13) * Math.PI) * 4 +
+            Math.cos((seed % 17) * Math.PI * 0.5) * 5);
         const score = Math.min(100, Math.max(45, Math.round(baseScore)));
         const id =
           mapping.id === "cs_xipa_mat" && component.id === "gc_mat_mid"

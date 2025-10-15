@@ -2,6 +2,7 @@ import axios, { AxiosHeaders, type AxiosResponse } from "axios";
 import type {
   BaseRecord,
   CrudFilters,
+  CrudSorter,
   DataProvider,
   GetListResponse,
   GetOneResponse,
@@ -247,25 +248,42 @@ const ensureParams = (
   pagination?: { current?: number; pageSize?: number };
   filters?: CrudFilters;
   meta?: Record<string, unknown>;
+  sorters?: CrudSorter[];
 } => ({
   resource: params.resource,
   pagination: params.pagination,
   filters: params.filters,
   meta: params.meta,
+  sorters: (params as any).sorters as CrudSorter[] | undefined,
 });
 
 const dataProvider: DataProvider = {
   getList: async <TData extends BaseRecord = BaseRecord>(
     params: Parameters<DataProvider["getList"]>[0]
   ): Promise<GetListResponse<TData>> => {
-    const { resource, pagination, filters, meta } = ensureParams(params as any);
+    const { resource, pagination, filters, meta, sorters } = ensureParams(params as any);
 
     const queryParams: Record<string, unknown> = {
       ...transformFilters(resource, filters as CrudFilters | undefined),
     };
 
+    if (pagination?.current) {
+      queryParams._page = pagination.current;
+    }
     if (pagination?.pageSize) {
-      queryParams.limit = pagination.pageSize;
+      queryParams._perPage = pagination.pageSize;
+    }
+
+    if (Array.isArray(sorters) && sorters.length > 0) {
+      const sorter = sorters[0];
+      if (sorter?.field) {
+        queryParams._sort = sorter.field;
+        const orderValue =
+          typeof sorter.order === "string"
+            ? sorter.order.toLowerCase()
+            : sorter.order?.toString().toLowerCase();
+        queryParams._order = orderValue === "desc" || orderValue === "descend" ? "DESC" : "ASC";
+      }
     }
 
     if (meta?.cursor) {

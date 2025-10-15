@@ -1,11 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Result, Space, Spin, Table, Typography } from "antd";
+import { Button, Input, Result, Select, Space, Spin, Table, Tooltip, Typography } from "antd";
 import type { AxiosError } from "axios";
 import type { ColumnsType } from "antd/es/table";
 import { List, useTable } from "@refinedev/antd";
-import { useResource, useNavigation, useDelete, useNotification, useCan } from "@refinedev/core";
+import {
+  useResource,
+  useNavigation,
+  useDelete,
+  useNotification,
+  useCan,
+  type CrudFilter,
+} from "@refinedev/core";
 import { Space as AntdSpace } from "antd";
-import { RocketOutlined } from "@ant-design/icons";
+import {
+  FilterOutlined,
+  ReloadOutlined,
+  RocketOutlined,
+  SearchOutlined,
+  SortAscendingOutlined,
+  SortDescendingOutlined,
+} from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { ConfirmModal } from "../components/confirm-modal";
 import { ResourceActionGuard } from "../components/resource-action-guard";
@@ -53,7 +67,7 @@ export const ResourceList = () => {
     { queryOptions: { enabled: Boolean(resolvedResourceName) } }
   );
 
-  const { tableProps, tableQueryResult } = useTable({
+  const { tableProps, tableQueryResult, setFilters, setSorters, filters, sorters } = useTable({
     resource: resolvedResourceName,
     pagination: {
       current: 1,
@@ -122,6 +136,98 @@ export const ResourceList = () => {
       void refetch();
     }
   }, [refetch]);
+
+  const defaultSearchField =
+    (resource?.meta?.searchField as string | undefined) ??
+    (resource?.meta?.label === "Siswa" ? "fullName" : "name");
+
+  const [searchValue, setSearchValue] = useState<string>("");
+  const [selectedSortField, setSelectedSortField] = useState<string | undefined>();
+  const [selectedSortOrder, setSelectedSortOrder] = useState<"ascend" | "descend" | undefined>();
+
+  useEffect(() => {
+    const activeSearchFilter = filters?.find(
+      (filter) => "field" in filter && (filter.field as string) === defaultSearchField
+    ) as CrudFilter | undefined;
+    if (activeSearchFilter && "value" in activeSearchFilter) {
+      setSearchValue(String(activeSearchFilter.value ?? ""));
+    } else {
+      setSearchValue("");
+    }
+  }, [filters, defaultSearchField]);
+
+  useEffect(() => {
+    if (Array.isArray(sorters) && sorters.length > 0) {
+      const activeSorter = sorters[0];
+      setSelectedSortField((activeSorter.field as string) ?? undefined);
+      setSelectedSortOrder((activeSorter.order as "ascend" | "descend" | undefined) ?? undefined);
+    } else {
+      setSelectedSortField(undefined);
+      setSelectedSortOrder(undefined);
+    }
+  }, [sorters]);
+
+  const applySearchFilter = useCallback(
+    (rawValue: string) => {
+      if (!setFilters) return;
+      const normalized = rawValue.trim();
+      const otherFilters =
+        filters
+          ?.filter((filter) => "field" in filter && (filter.field as string) !== defaultSearchField)
+          ?.map((filter) => filter as CrudFilter) ?? [];
+
+      const nextFilters: CrudFilter[] = [...otherFilters];
+      if (normalized.length > 0) {
+        nextFilters.push({
+          field: defaultSearchField,
+          operator: "contains",
+          value: normalized,
+        });
+      }
+
+      setFilters(nextFilters, "replace");
+    },
+    [defaultSearchField, filters, setFilters]
+  );
+
+  const handleSearchSubmit = useCallback(
+    (value: string) => {
+      setSearchValue(value);
+      applySearchFilter(value);
+    },
+    [applySearchFilter]
+  );
+
+  const handleSortFieldChange = useCallback(
+    (value: string | undefined) => {
+      setSelectedSortField(value);
+      if (!setSorters) return;
+      if (!value) {
+        setSorters([], "replace");
+        return;
+      }
+      const order = selectedSortOrder ?? "ascend";
+      setSorters([{ field: value, order }], "replace");
+    },
+    [selectedSortOrder, setSorters]
+  );
+
+  const handleSortOrderChange = useCallback(
+    (order: "ascend" | "descend") => {
+      setSelectedSortOrder(order);
+      if (!setSorters || !selectedSortField) return;
+      setSorters([{ field: selectedSortField, order }], "replace");
+    },
+    [selectedSortField, setSorters]
+  );
+
+  const handleResetControls = useCallback(() => {
+    setSearchValue("");
+    setSelectedSortField(undefined);
+    setSelectedSortOrder(undefined);
+    setFilters?.([], "replace");
+    setSorters?.([], "replace");
+  }, [setFilters, setSorters]);
 
   const resourceLabel = useMemo(
     () => resource?.meta?.label ?? resource?.label ?? resource?.name ?? "Resource",
@@ -319,6 +425,7 @@ export const ResourceList = () => {
       title: formatTitle(key),
       dataIndex: key,
       ellipsis: true,
+      sorter: true,
       render: (value: unknown) => {
         if (value === null || value === undefined) {
           return <Typography.Text type="secondary">—</Typography.Text>;
@@ -415,6 +522,17 @@ export const ResourceList = () => {
 
   const shouldShowSpinner = showLoadingState || (hasRecords && isFetching);
   const tableLoadingProps = shouldShowSpinner ? { spinning: true, tip: "Memuat data..." } : false;
+  const columnOptions = useMemo(
+    () =>
+      columns
+        .filter((column) => typeof column.dataIndex === "string")
+        .map((column) => ({
+          value: column.dataIndex as string,
+          label:
+            typeof column.title === "string" ? column.title : formatTitle(String(column.dataIndex)),
+        })),
+    [columns]
+  );
 
   return (
     <ResourceActionGuard action="list" resourceName={resolvedResourceName}>
@@ -472,14 +590,69 @@ export const ResourceList = () => {
         >
           {errorResult}
           {!errorResult && (
-            <Table
-              {...restTableProps}
-              dataSource={dataSource}
-              columns={columnsWithActions}
-              loading={tableLoadingProps}
-              locale={tableLocale}
-              rowKey={(record) => (record as { id?: string | number }).id ?? JSON.stringify(record)}
-            />
+            <>
+              <Space
+                wrap
+                style={{ width: "100%", marginBottom: 16, justifyContent: "space-between" }}
+                align="center"
+              >
+                <Space wrap>
+                  <Input.Search
+                    value={searchValue}
+                    onChange={(event) => setSearchValue(event.target.value)}
+                    onSearch={handleSearchSubmit}
+                    allowClear
+                    enterButton={<SearchOutlined />}
+                    placeholder={`Cari ${resourceLabelLower}`}
+                    style={{ minWidth: 220 }}
+                  />
+                  {columnOptions.length > 0 ? (
+                    <Select
+                      allowClear
+                      placeholder="Kolom urut"
+                      style={{ minWidth: 180 }}
+                      options={columnOptions}
+                      value={selectedSortField}
+                      onChange={(value) => handleSortFieldChange(value as string | undefined)}
+                      onClear={() => handleSortFieldChange(undefined)}
+                      suffixIcon={<FilterOutlined />}
+                    />
+                  ) : null}
+                  <Button.Group>
+                    <Tooltip title="Urutkan menaik">
+                      <Button
+                        icon={<SortAscendingOutlined />}
+                        disabled={!selectedSortField}
+                        type={selectedSortOrder === "ascend" ? "primary" : "default"}
+                        onClick={() => handleSortOrderChange("ascend")}
+                      />
+                    </Tooltip>
+                    <Tooltip title="Urutkan menurun">
+                      <Button
+                        icon={<SortDescendingOutlined />}
+                        disabled={!selectedSortField}
+                        type={selectedSortOrder === "descend" ? "primary" : "default"}
+                        onClick={() => handleSortOrderChange("descend")}
+                      />
+                    </Tooltip>
+                  </Button.Group>
+                  <Tooltip title="Reset filter & urutan">
+                    <Button icon={<ReloadOutlined />} onClick={handleResetControls} />
+                  </Tooltip>
+                </Space>
+                <Typography.Text type="secondary">Endpoint: {resourceEndpoint}</Typography.Text>
+              </Space>
+              <Table
+                {...restTableProps}
+                dataSource={dataSource}
+                columns={columnsWithActions}
+                loading={tableLoadingProps}
+                locale={tableLocale}
+                rowKey={(record) =>
+                  (record as { id?: string | number }).id ?? JSON.stringify(record)
+                }
+              />
+            </>
           )}
         </List>
         <ConfirmModal

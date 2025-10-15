@@ -30,11 +30,27 @@ import { SubjectsCreate } from "./pages/subjects-create";
 import { SubjectsEdit } from "./pages/subjects-edit";
 import { TermsCreate } from "./pages/terms-create";
 import { TermsEdit } from "./pages/terms-edit";
+import { SchedulesCreate } from "./pages/schedules-create";
+import { SchedulesEdit } from "./pages/schedules-edit";
 import { EnrollmentsCreate } from "./pages/enrollments-create";
 import { EnrollmentsEdit } from "./pages/enrollments-edit";
 import { GradeComponentsCreate } from "./pages/grade-components-create";
 import { GradeComponentsEdit } from "./pages/grade-components-edit";
 import { GradesEdit } from "./pages/grades-edit";
+import {
+  BookOutlined,
+  CalendarOutlined,
+  CheckCircleOutlined,
+  ContainerOutlined,
+  DashboardOutlined,
+  DeploymentUnitOutlined,
+  FileDoneOutlined,
+  NotificationOutlined,
+  ReadOutlined,
+  ScheduleOutlined,
+  SolutionOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 import { GradeConfigPage } from "./pages/grade-config";
 import { DashboardPage } from "./pages/dashboard";
 import { AttendanceCreate } from "./pages/attendance-create";
@@ -59,11 +75,12 @@ const resources = [
     name: "dashboard",
     list: "/dashboard",
     meta: {
-      label: "Dashboard",
+      label: "Dasbor",
       canCreate: false,
       canEdit: false,
       canDelete: false,
       canShow: false,
+      icon: <DashboardOutlined />,
     },
   },
   {
@@ -73,13 +90,14 @@ const resources = [
     edit: "/students/edit/:id",
     show: "/students/show/:id",
     meta: {
-      label: "Students",
+      label: "Siswa",
       canCreate: true,
       canEdit: true,
       canDelete: true,
       canShow: true,
       showSetupWizardLink: true,
       showImportStatusLink: true,
+      icon: <SolutionOutlined />,
     },
   },
   {
@@ -89,12 +107,13 @@ const resources = [
     edit: "/teachers/edit/:id",
     show: "/teachers/show/:id",
     meta: {
-      label: "Teachers",
+      label: "Guru",
       canCreate: true,
       canEdit: true,
       canDelete: true,
       canShow: true,
       showImportStatusLink: true,
+      icon: <TeamOutlined />,
     },
   },
   {
@@ -103,7 +122,14 @@ const resources = [
     create: "/classes/create",
     edit: "/classes/edit/:id",
     show: "/classes/show/:id",
-    meta: { label: "Classes", canCreate: true, canEdit: true, canDelete: true, canShow: true },
+    meta: {
+      label: "Kelas",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      icon: <ReadOutlined />,
+    },
   },
   {
     name: "subjects",
@@ -111,7 +137,14 @@ const resources = [
     create: "/subjects/create",
     edit: "/subjects/edit/:id",
     show: "/subjects/show/:id",
-    meta: { label: "Subjects", canCreate: true, canEdit: true, canDelete: true, canShow: true },
+    meta: {
+      label: "Mata Pelajaran",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      icon: <BookOutlined />,
+    },
   },
   {
     name: "terms",
@@ -120,12 +153,13 @@ const resources = [
     edit: "/terms/edit/:id",
     show: "/terms/show/:id",
     meta: {
-      label: "Terms",
+      label: "Tahun Ajaran",
       canCreate: true,
       canEdit: true,
       canDelete: true,
       canShow: true,
       showSetupWizardLink: true,
+      icon: <ContainerOutlined />,
     },
   },
   {
@@ -134,7 +168,29 @@ const resources = [
     create: "/enrollments/create",
     edit: "/enrollments/edit/:id",
     show: "/enrollments/show/:id",
-    meta: { label: "Enrollments", canCreate: true, canEdit: true, canDelete: true, canShow: true },
+    meta: {
+      label: "Penempatan",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      icon: <DeploymentUnitOutlined />,
+    },
+  },
+  {
+    name: "schedules",
+    list: "/schedules",
+    create: "/schedules/create",
+    edit: "/schedules/edit/:id",
+    show: "/schedules/show/:id",
+    meta: {
+      label: "Jadwal",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      icon: <CalendarOutlined />,
+    },
   },
   {
     name: "grade-components",
@@ -143,12 +199,13 @@ const resources = [
     edit: "/grade-components/edit/:id",
     show: "/grade-components/show/:id",
     meta: {
-      label: "Grade Components",
+      label: "Komponen Nilai",
       canCreate: true,
       canEdit: true,
       canDelete: true,
       canShow: true,
       showGradeConfigLink: true,
+      icon: <FileDoneOutlined />,
     },
   },
   {
@@ -156,28 +213,37 @@ const resources = [
     list: "/grades",
     edit: "/grades/edit/:id",
     show: "/grades/show/:id",
-    meta: { label: "Grades", canCreate: false, canEdit: true, canDelete: true, canShow: true },
+    meta: {
+      label: "Nilai",
+      canCreate: false,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      icon: <CheckCircleOutlined />,
+    },
   },
   {
     name: "grade-configs",
     list: "/grade-configs",
     meta: {
-      label: "Grade Config",
+      label: "Konfigurasi Penilaian",
       canCreate: false,
       canEdit: true,
       canDelete: true,
       canShow: true,
+      icon: <FileDoneOutlined />,
     },
   },
   {
     name: "announcements",
     list: "/announcements",
     meta: {
-      label: "Announcements",
+      label: "Pengumuman",
       canCreate: true,
       canEdit: true,
       canDelete: true,
       canShow: true,
+      icon: <NotificationOutlined />,
     },
   },
   {
@@ -189,13 +255,14 @@ const resources = [
       canEdit: true,
       canDelete: true,
       canShow: true,
+      icon: <FileDoneOutlined />,
     },
   },
   {
     name: "grade-configs",
     list: "/grade-configs",
     meta: {
-      label: "Grade Config",
+      label: "Konfigurasi Penilaian",
       canCreate: false,
       canEdit: true,
       canDelete: true,
@@ -208,7 +275,14 @@ const resources = [
     create: "/attendance/create",
     edit: "/attendance/edit/:id",
     show: "/attendance/show/:id",
-    meta: { label: "Attendance", canCreate: true, canEdit: true, canDelete: true, canShow: true },
+    meta: {
+      label: "Absensi",
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      icon: <ScheduleOutlined />,
+    },
   },
 ] as const;
 
@@ -242,6 +316,10 @@ const resourceRouteConfig: Record<
   enrollments: {
     create: <EnrollmentsCreate />,
     edit: <EnrollmentsEdit />,
+  },
+  schedules: {
+    create: <SchedulesCreate />,
+    edit: <SchedulesEdit />,
   },
   "grade-components": {
     create: <GradeComponentsCreate />,

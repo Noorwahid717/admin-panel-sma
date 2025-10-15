@@ -18,4 +18,7 @@ export default defineConfig(({ mode }) => ({
       interval: 500,
     },
   },
+  build: {
+    target: "es2022",
+  },
 }));
