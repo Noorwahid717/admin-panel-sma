@@ -322,6 +322,22 @@ describe("MSW Fixtures", () => {
     expect(removed?.id).toBe(created.id);
   });
 
+  it("Helper rekap absensi mengembalikan ringkasan status dan alfa mingguan", () => {
+    const classes = mswTestUtils.list("classes");
+    expect(classes.length).toBeGreaterThan(0);
+    const summary = mswTestUtils.getAttendanceSummary({ classId: classes[0].id });
+
+    expect(summary.total).toBeGreaterThan(0);
+    expect(summary.byStatus.H + summary.byStatus.I + summary.byStatus.S + summary.byStatus.A).toBe(
+      summary.total
+    );
+    const weeklyAlphaKeys = Object.keys(summary.weeklyAlpha);
+    expect(weeklyAlphaKeys.length).toBeGreaterThan(0);
+    weeklyAlphaKeys.forEach((weekKey) => {
+      expect(summary.weeklyAlpha[weekKey]).toBeGreaterThanOrEqual(0);
+    });
+  });
+
   it("Tersedia akun MSW untuk setiap peran utama", () => {
     const roles = [
       "SUPERADMIN",

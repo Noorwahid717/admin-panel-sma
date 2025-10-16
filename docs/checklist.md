@@ -17,6 +17,7 @@
 - [x] UI wizard setup pra-semester (upload CSV; pratinjau)
 - [x] Absensi harian Wali Kelas (with persistence, history, export)
 - [x] Absensi per jam Guru Mapel (with persistence, history, export)
+- [x] Rekap kehadiran & analitik kelas (grafik, ekspor)
 - [x] Absensi pembelajaran harian (autosave & sinkron jadwal)
 - [ ] Worker notifikasi ortu (A > X)
 - [x] GradeConfig + GradeItem + GradeScore + kalkulasi

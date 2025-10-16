@@ -675,6 +675,84 @@ export const mswTestUtils = {
     Object.assign(principalDashboard, next);
     return clone(principalDashboard);
   },
+  getAttendanceSummary({
+    classId,
+    startDate,
+    endDate,
+  }: {
+    classId?: string;
+    startDate?: string;
+    endDate?: string;
+  } = {}) {
+    const parseDate = (value?: string) => {
+      if (!value) return null;
+      const parsed = new Date(`${value}T00:00:00Z`);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const start = parseDate(startDate);
+    const end = parseDate(endDate);
+
+    const weekKey = (value: string) => {
+      const parsed = new Date(`${value}T00:00:00Z`);
+      if (Number.isNaN(parsed.getTime())) {
+        return value;
+      }
+      const jsDay = parsed.getUTCDay(); // 0-6
+      const diff = (jsDay + 6) % 7;
+      const monday = new Date(parsed);
+      monday.setUTCDate(parsed.getUTCDate() - diff);
+      return monday.toISOString().slice(0, 10);
+    };
+
+    const filtered = attendance.filter((record) => {
+      if (classId && record.classId !== classId) {
+        return false;
+      }
+      const recordDate = parseDate(record.date);
+      if (!recordDate) {
+        return false;
+      }
+      if (start && recordDate < start) {
+        return false;
+      }
+      if (end && recordDate > end) {
+        return false;
+      }
+      return true;
+    });
+
+    const byStatus: Record<string, number> = { H: 0, I: 0, S: 0, A: 0 };
+    const weeklyAlpha: Record<string, number> = {};
+    const weeklyAttendance: Record<string, { present: number; total: number }> = {};
+
+    filtered.forEach((record) => {
+      const statusKey = String(record.status ?? "").toUpperCase();
+      if (statusKey in byStatus) {
+        byStatus[statusKey] += 1;
+      }
+
+      const week = weekKey(record.date);
+      if (!weeklyAttendance[week]) {
+        weeklyAttendance[week] = { present: 0, total: 0 };
+      }
+      weeklyAttendance[week].total += 1;
+      if (statusKey === "H") {
+        weeklyAttendance[week].present += 1;
+      }
+
+      if (statusKey === "A") {
+        weeklyAlpha[week] = (weeklyAlpha[week] ?? 0) + 1;
+      }
+    });
+
+    return {
+      total: filtered.length,
+      byStatus,
+      weeklyAlpha,
+      weeklyAttendance,
+    };
+  },
 };
 
 // Simulation flags (toggle via query param or by editing these vars during dev)

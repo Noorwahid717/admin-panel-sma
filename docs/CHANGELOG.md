@@ -21,19 +21,22 @@ menyatu dengan jadwal MSW sehingga guru dapat menandai kehadiran dalam hitungan 
    validasi alasan izin/sakit, toggle “tandai semua hadir”, dan dukungan mobile layout.
 6. Menambah metadata `slot`, `recordedAt`, dan `updatedAt` pada seed MSW sehingga
    UI dapat menampilkan jam pelajaran dan indikator sinkronisasi.
+7. Menyajikan halaman Rekap Kehadiran lengkap dengan tabel analitik, grafik mingguan,
+   ekspor CSV, dan highlight Top 3 siswa paling disiplin.
 
 ### 🔍 Verification
 
 - `pnpm --filter @apps/admin test` _(gagal di sandbox CI dengan `write EPIPE`; jalankan lokal
   untuk memastikan seluruh skenario Vitest lulus)._
-- Manual smoke test: `/calendar` + `/attendance/daily` pada dev server dengan MSW aktif.
+- Manual smoke test: `/calendar`, `/attendance/daily`, dan `/attendance` pada dev server dengan MSW aktif.
 
 ### 📚 Related Documentation
 
 - `docs/checklist.md` (update status kalender & absensi terpadu)
-- `apps/admin/src/pages/calendar.tsx`, `apps/admin/src/pages/attendance-daily.tsx`
+- `apps/admin/src/pages/calendar.tsx`, `apps/admin/src/pages/attendance-daily.tsx`,
+  `apps/admin/src/pages/attendance-analytics.tsx`
 - `apps/admin/src/mocks/seed.ts`, `apps/admin/src/hooks/use-events.ts`,
-  `apps/admin/src/hooks/use-attendance-session.ts`
+  `apps/admin/src/hooks/use-attendance-session.ts`, `apps/admin/src/hooks/use-attendance-analytics.ts`
 
 ## [2025-10-15] - MSW Mock API Revamp + Documentation ✅
 

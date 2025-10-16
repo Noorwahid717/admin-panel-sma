@@ -57,6 +57,7 @@ import { AttendanceCreate } from "./pages/attendance-create";
 import { AttendanceEdit } from "./pages/attendance-edit";
 import { AttendanceDailyPage } from "./pages/attendance-daily";
 import { AttendanceLessonPage } from "./pages/attendance-lesson";
+import { AttendanceAnalyticsPage } from "./pages/attendance-analytics";
 import { ResourceShow } from "./pages/resource-show";
 import { SetupWizard } from "./pages/setup-wizard";
 import { ImportStatusPage } from "./pages/import-status";
@@ -452,6 +453,8 @@ async function bootstrap() {
                               <BehaviorNotesPage />
                             ) : resource.name === "calendar" ? (
                               <CalendarPage />
+                            ) : resource.name === "attendance" ? (
+                              <AttendanceAnalyticsPage />
                             ) : resource.name === "schedules" ? (
                               <SchedulesPage />
                             ) : resource.name === "classes" ? (
