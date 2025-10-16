@@ -1,4 +1,4 @@
-import type { Role } from "../../../shared/src/constants";
+import type { Role } from "@shared/constants";
 
 export type AppRole = Role;
 

@@ -1,17 +1,13 @@
 import { Inject, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import type { ReportPdfJobData, ReportRequestInput } from "../../../../shared/src/schemas";
-import type { Database } from "../../../../shared/src/db/client";
-import {
-  classes,
-  enrollments,
-  reportJobs,
-  students,
-  terms,
-} from "../../../../shared/src/db/schema";
+import type { ReportPdfJobData, ReportRequestInput } from "@shared/schemas";
+import type { Database } from "@shared/db/client";
+import { classes, enrollments, reportJobs, students, terms } from "@shared/db/schema";
 import { and, desc, eq, type SQL } from "drizzle-orm";
 import { OwnershipService } from "../../common/services/ownership.service";
 import type { AppRole, RequestUser } from "@api/auth/auth.types";
 import type { Queue } from "bullmq";
+import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
+import { REPORT_PDF_QUEUE } from "../../infrastructure/queue/queue.constants";
 import { nanoid } from "nanoid";
 
 const ADMIN_ROLES = new Set<AppRole>(["SUPERADMIN", "ADMIN", "OPERATOR"]);

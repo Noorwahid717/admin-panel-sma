@@ -2,38 +2,38 @@
   "name": "@apps/shared",
   "version": "0.1.0",
   "private": true,
-  "type": "commonjs",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "main": "output/index.js",
+  "types": "output/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "types": "./output/index.d.ts",
+      "import": "./output/index.js",
+      "require": "./output/index.js"
     },
     "./db/schema": {
-      "types": "./dist/db/schema.d.ts",
-      "import": "./dist/db/schema.js",
-      "require": "./dist/db/schema.js"
+      "types": "./output/db/schema.d.ts",
+      "import": "./output/db/schema.js",
+      "require": "./output/db/schema.js"
     },
     "./db/client": {
-      "types": "./dist/db/client.d.ts",
-      "import": "./dist/db/client.js",
-      "require": "./dist/db/client.js"
+      "types": "./output/db/client.d.ts",
+      "import": "./output/db/client.js",
+      "require": "./output/db/client.js"
     },
     "./schemas": {
-      "types": "./dist/schemas/index.d.ts",
-      "import": "./dist/schemas/index.js",
-      "require": "./dist/schemas/index.js"
+      "types": "./output/schemas/index.d.ts",
+      "import": "./output/schemas/index.js",
+      "require": "./output/schemas/index.js"
     },
     "./constants": {
-      "types": "./dist/constants/index.d.ts",
-      "import": "./dist/constants/index.js",
-      "require": "./dist/constants/index.js"
+      "types": "./output/constants/index.d.ts",
+      "import": "./output/constants/index.js",
+      "require": "./output/constants/index.js"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "eslint \"src\"",
     "test": "vitest",
     "dev": "pnpm build --watch",

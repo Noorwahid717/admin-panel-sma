@@ -6,7 +6,7 @@
     "incremental": true,
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "paths": {
-      "@shared/*": ["apps/shared/src/*", "apps/shared/dist/*"],
+      "@shared/*": ["apps/shared/src/*"],
       "@api/*": ["apps/api/src/*"]
     }
   },

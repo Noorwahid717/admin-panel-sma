@@ -1,6 +1,6 @@
 import pkg from "pg";
 const { Pool } = pkg;
-import { createDbClient, createDatabasePool, type Database } from "../../shared/src/db/client";
+import { createDbClient, createDatabasePool, type Database } from "@shared/db/client";
 
 let dbInstance: Database | null = null;
 let poolInstance: InstanceType<typeof Pool> | null = null;

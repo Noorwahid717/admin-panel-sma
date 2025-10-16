@@ -1,19 +1,16 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { and, between, eq, gte, lte, sql } from "drizzle-orm";
-import type {
+import {
+  attendanceQuerySchema,
+  bulkAttendanceSchema,
+  createAttendanceRecordSchema,
   AttendanceQueryInput,
   BulkAttendanceInput,
   CreateAttendanceRecordInput,
-} from "../../../../shared/src/schemas";
-import type { Database } from "../../../../shared/src/db/client";
-import {
-  attendance,
-  classes,
-  enrollments,
-  students,
-  subjects,
-  terms,
-} from "../../../../shared/src/db/schema";
+} from "@shared/schemas";
+import type { Database } from "@shared/db/client";
+import { attendance, classes, enrollments, students, subjects, terms } from "@shared/db/schema";
+import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
 import { nanoid } from "nanoid";
 import type { RequestUser } from "@api/auth/auth.types";
 import { OwnershipService } from "../../common/services/ownership.service";

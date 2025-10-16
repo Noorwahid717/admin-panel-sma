@@ -2,10 +2,10 @@
 import { Worker, Job } from "bullmq";
 import { eq } from "drizzle-orm";
 import { Redis } from "ioredis";
-import { REPORT_PDF_QUEUE } from "../../shared/src/constants";
-import { reportPdfJobSchema, type ReportPdfJobData } from "../../shared/src/schemas";
-import { reportJobs } from "../../shared/src/db/schema";
-import type { Database } from "../../shared/src/db/client";
+import { REPORT_PDF_QUEUE } from "@shared/constants";
+import { reportPdfJobSchema, type ReportPdfJobData } from "@shared/schemas";
+import { reportJobs } from "@shared/db/schema";
+import type { Database } from "@shared/db/client";
 import { buildReportPdfPayload } from "../lib/report-data.js";
 import { generateReportPdf } from "../lib/pdf.js";
 import { getDatabase, closeDatabase } from "../lib/database.js";

@@ -5,9 +5,10 @@ import type {
   CreateStudentInput,
   StudentQuery,
   UpdateStudentInput,
-} from "../../../../shared/src/schemas";
-import type { Database } from "../../../../shared/src/db/client";
-import { students, enrollments } from "../../../../shared/src/db/schema";
+} from "@shared/schemas";
+import type { Database } from "@shared/db/client";
+import { students, enrollments } from "@shared/db/schema";
+import { DRIZZLE_CLIENT } from "../../infrastructure/database/database.constants";
 import { nanoid } from "nanoid";
 
 @Injectable()

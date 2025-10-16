@@ -9,7 +9,7 @@
     "incremental": true,
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "paths": {
-      "@apps/shared/*": ["../shared/src/*"]
+      "@shared/*": ["apps/shared/output/*"]
     }
   },
   "include": ["src/**/*"]

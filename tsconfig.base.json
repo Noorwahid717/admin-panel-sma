@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -11,13 +11,7 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": ".",
-    "paths": {
-      "@shared/*": ["apps/shared/src/*"],
-      "@api/*": ["apps/api/src/*"],
-      "@worker/*": ["apps/worker/src/*"],
-      "@admin/*": ["apps/admin/src/*"]
-    }
+    "baseUrl": "."
   },
   "exclude": ["node_modules", "dist"]
 }

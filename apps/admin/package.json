@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prebuild": "pnpm --filter @apps/shared build",
+    "prebuild": "",
     "dev": "vite",
     "test": "vitest",
     "build": "vite build --target es2022",
