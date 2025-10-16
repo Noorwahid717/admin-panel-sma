@@ -1,5 +1,40 @@
 # Changelog - Build & Runtime Fixes
 
+## [2025-10-20] - Kalender Akademik & Absensi Terintegrasi ✅
+
+### 🎯 Objective
+
+Memperkenalkan kalender akademik hybrid dan pengalaman input absensi harian yang
+menyatu dengan jadwal MSW sehingga guru dapat menandai kehadiran dalam hitungan detik.
+
+### ✏️ Changes
+
+1. Menambahkan halaman `CalendarPage` baru lengkap dengan filter tahun ajar, kategori,
+   tooltip event, modal detail, dan mode legend responsif.
+2. Menggabungkan data event manual, jadwal ujian, dan pengumuman melalui hook `useEvents`
+   serta memperkaya seed MSW dengan kategori/warna sesuai panduan desain.
+3. Memperluas `mswTestUtils` dan skenario Vitest agar memverifikasi event kalender,
+   termasuk CRUD dasar pada resource `calendar-events`.
+4. Membuat hook `useAttendanceSession` yang memetakan jadwal, mapping kelas-mapel,
+   dan absensi `sessionType: "Mapel"` ke baris siswa siap-input.
+5. Menulis ulang `AttendanceDailyPage` dengan status badge besar, auto-save 3 detik,
+   validasi alasan izin/sakit, toggle “tandai semua hadir”, dan dukungan mobile layout.
+6. Menambah metadata `slot`, `recordedAt`, dan `updatedAt` pada seed MSW sehingga
+   UI dapat menampilkan jam pelajaran dan indikator sinkronisasi.
+
+### 🔍 Verification
+
+- `pnpm --filter @apps/admin test` _(gagal di sandbox CI dengan `write EPIPE`; jalankan lokal
+  untuk memastikan seluruh skenario Vitest lulus)._
+- Manual smoke test: `/calendar` + `/attendance/daily` pada dev server dengan MSW aktif.
+
+### 📚 Related Documentation
+
+- `docs/checklist.md` (update status kalender & absensi terpadu)
+- `apps/admin/src/pages/calendar.tsx`, `apps/admin/src/pages/attendance-daily.tsx`
+- `apps/admin/src/mocks/seed.ts`, `apps/admin/src/hooks/use-events.ts`,
+  `apps/admin/src/hooks/use-attendance-session.ts`
+
 ## [2025-10-15] - MSW Mock API Revamp + Documentation ✅
 
 ### 🎯 Objective

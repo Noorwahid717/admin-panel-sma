@@ -66,6 +66,7 @@ import { AppLayout } from "./components/layout/app-layout";
 import { ClassesPage } from "./pages/classes";
 import { ClassesShow } from "./pages/classes-show";
 import { SchedulesPage } from "./pages/schedules";
+import { CalendarPage } from "./pages/calendar";
 
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
@@ -164,6 +165,18 @@ const resources = [
       canShow: true,
       showSetupWizardLink: true,
       icon: <ContainerOutlined />,
+    },
+  },
+  {
+    name: "calendar",
+    list: "/calendar",
+    meta: {
+      label: "Kalender Akademik",
+      canCreate: false,
+      canEdit: false,
+      canDelete: false,
+      canShow: false,
+      icon: <CalendarOutlined />,
     },
   },
   {
@@ -317,6 +330,7 @@ const resourceRouteConfig: Record<
     create: <TermsCreate />,
     edit: <TermsEdit />,
   },
+  calendar: {},
   enrollments: {
     create: <EnrollmentsCreate />,
     edit: <EnrollmentsEdit />,
@@ -436,6 +450,8 @@ async function bootstrap() {
                               <AnnouncementsPage />
                             ) : resource.name === "behavior-notes" ? (
                               <BehaviorNotesPage />
+                            ) : resource.name === "calendar" ? (
+                              <CalendarPage />
                             ) : resource.name === "schedules" ? (
                               <SchedulesPage />
                             ) : resource.name === "classes" ? (

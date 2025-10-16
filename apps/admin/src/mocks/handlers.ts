@@ -26,6 +26,8 @@ const gradeComponents = [...seed.gradeComponents];
 const gradeConfigs = [...seed.gradeConfigs];
 const grades = [...seed.grades];
 const attendance = [...seed.attendance];
+const calendarEvents = [...seed.calendarEvents];
+const examEvents = [...seed.examEvents];
 const announcements = [...seed.announcements];
 const behaviorNotes = [...seed.behaviorNotes];
 const mutations = [...seed.mutations];
@@ -164,6 +166,8 @@ const resourceKeys = [
   "grade-configs",
   "grades",
   "attendance",
+  "calendar-events",
+  "exam-events",
   "class-subjects",
   "schedules",
   "announcements",
@@ -186,6 +190,8 @@ const stores: Record<ResourceKey, Record<string, any>[]> = {
   "grade-configs": gradeConfigs,
   grades,
   attendance,
+  "calendar-events": calendarEvents,
+  "exam-events": examEvents,
   "class-subjects": classSubjects,
   schedules,
   announcements,
@@ -196,7 +202,7 @@ const stores: Record<ResourceKey, Record<string, any>[]> = {
 };
 
 const resourcePathRegex =
-  /\/(?:api(?:\/v1)?)?\/?(students|teachers|classes|subjects|terms|enrollments|grade-components|grade-configs|grades|attendance|class-subjects|schedules|announcements|behavior-notes|mutations|archives|dashboard)(?:\/([^/?]+))?\/?$/;
+  /\/(?:api(?:\/v1)?)?\/?(students|teachers|classes|subjects|terms|enrollments|grade-components|grade-configs|grades|attendance|calendar-events|exam-events|class-subjects|schedules|announcements|behavior-notes|mutations|archives|dashboard)(?:\/([^/?]+))?\/?$/;
 
 const parseResourceRequest = (request: Request) => {
   const url = new URL(request.url);
@@ -235,6 +241,15 @@ const sanitizeDate = (value: unknown) => {
     return typeof value === "string" ? value : undefined;
   }
   return date.toISOString().slice(0, 10);
+};
+
+const sanitizeDateTime = (value: unknown) => {
+  if (!value) return undefined;
+  const date = new Date(value as string);
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === "string" ? value : undefined;
+  }
+  return date.toISOString();
 };
 
 const normalizers: Partial<
@@ -304,6 +319,33 @@ const normalizers: Partial<
     const next = { ...data };
     const date = sanitizeDate(next.date);
     if (date) next.date = date;
+    if (typeof next.slot === "string") {
+      const parsed = Number(next.slot);
+      next.slot = Number.isNaN(parsed) ? next.slot : parsed;
+    }
+    const recordedAt = sanitizeDateTime(next.recordedAt);
+    if (recordedAt) next.recordedAt = recordedAt;
+    const updatedAt = sanitizeDateTime(next.updatedAt);
+    if (updatedAt) next.updatedAt = updatedAt;
+    return next;
+  },
+  "calendar-events": (data) => {
+    const next = { ...data };
+    const startDate = sanitizeDateTime(next.startDate);
+    const endDate = sanitizeDateTime(next.endDate);
+    if (startDate) next.startDate = startDate;
+    if (endDate) next.endDate = endDate;
+    if (typeof next.allDay !== "undefined") {
+      next.allDay = Boolean(next.allDay);
+    }
+    return next;
+  },
+  "exam-events": (data) => {
+    const next = { ...data };
+    const startDate = sanitizeDateTime(next.startDate);
+    const endDate = sanitizeDateTime(next.endDate);
+    if (startDate) next.startDate = startDate;
+    if (endDate) next.endDate = endDate;
     return next;
   },
   "grade-configs": (data) => {

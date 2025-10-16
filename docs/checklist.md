@@ -12,10 +12,12 @@
 - [ ] CRUD Kelas + assign Wali Kelas (wizard mock ready)
 - [ ] Master Mapel; mapping Mapel ↔ Kelas ↔ Guru (wizard mock ready)
 - [ ] Jadwal manual & generator + konflik (wizard mock ready)
+- [x] Kalender akademik (filter term, integrasi MSW)
 - [ ] Akun & kredensial: pembuatan user + notifikasi
 - [x] UI wizard setup pra-semester (upload CSV; pratinjau)
 - [x] Absensi harian Wali Kelas (with persistence, history, export)
 - [x] Absensi per jam Guru Mapel (with persistence, history, export)
+- [x] Absensi pembelajaran harian (autosave & sinkron jadwal)
 - [ ] Worker notifikasi ortu (A > X)
 - [x] GradeConfig + GradeItem + GradeScore + kalkulasi
 - [x] Pengumuman & dashboard audience

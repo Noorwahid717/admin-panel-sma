@@ -74,6 +74,7 @@ type ScheduleRecord = {
   startTime: string;
   endTime: string;
   room: string;
+  slot: number;
 };
 
 type GradeComponentRecord = {
@@ -112,6 +113,51 @@ type AttendanceRecord = {
   subjectId?: string;
   teacherId?: string;
   note?: string;
+  slot?: number;
+  recordedAt?: string;
+  updatedAt?: string;
+};
+
+type CalendarCategory =
+  | "EFFECTIVE_DAY"
+  | "HOLIDAY"
+  | "EXAM"
+  | "SCHOOL_ACTIVITY"
+  | "MEETING"
+  | "EXTRACURRICULAR"
+  | "INACTIVE_DAY";
+
+type CalendarEventRecord = {
+  id: string;
+  title: string;
+  description?: string;
+  category: CalendarCategory;
+  startDate: string;
+  endDate: string;
+  termId: string;
+  organizer?: string;
+  location?: string;
+  createdById?: string;
+  audience?: "ALL" | "GURU" | "SISWA" | "ORTU" | `CLASS:${string}`;
+  relatedClassIds?: string[];
+  tags?: string[];
+  allDay?: boolean;
+  source?: "MANUAL" | "SYNTHETIC" | "EXTERNAL";
+};
+
+type ExamEventRecord = {
+  id: string;
+  name: string;
+  termId: string;
+  examType: "PTS" | "PAS" | "TRYOUT" | "PRAKTEK";
+  startDate: string;
+  endDate: string;
+  scope: "SCHOOL" | "GRADE" | "CLASS";
+  relatedClassIds: string[];
+  organizer: string;
+  description?: string;
+  publishedAt: string;
+  tags?: string[];
 };
 
 type AnnouncementRecord = {
@@ -238,6 +284,8 @@ export type SeedData = {
   gradeConfigs: GradeConfigRecord[];
   grades: GradeRecord[];
   attendance: AttendanceRecord[];
+  calendarEvents: CalendarEventRecord[];
+  examEvents: ExamEventRecord[];
   announcements: AnnouncementRecord[];
   behaviorNotes: BehaviorNoteRecord[];
   mutations: MutationRecord[];
@@ -292,10 +340,13 @@ export function createSeedData(): SeedData {
   const attendance = createAttendance(
     enrollments,
     classSubjects,
+    schedules,
     studentsByClass,
     classSubjectsByClass,
     teachers
   );
+  const calendarEvents = createCalendarEvents(terms, classes, teachers);
+  const examEvents = createExamEvents(terms, classes, subjects);
   const announcements = createAnnouncements(classes);
   const behaviorNotes = createBehaviorNotes(students, classes);
   const mutations = createMutations(students, classes, teachers);
@@ -325,6 +376,8 @@ export function createSeedData(): SeedData {
     gradeConfigs,
     grades,
     attendance,
+    calendarEvents,
+    examEvents,
     announcements,
     behaviorNotes,
     mutations,
@@ -839,6 +892,7 @@ function createSchedules(classSubjects: ClassSubjectRecord[]): ScheduleRecord[] 
         startTime: slot.start,
         endTime: slot.end,
         room,
+        slot: (index % slots.length) + 1,
       },
     ];
   });
@@ -969,6 +1023,7 @@ function createGrades(
 function createAttendance(
   enrollments: EnrollmentRecord[],
   classSubjects: ClassSubjectRecord[],
+  schedules: ScheduleRecord[],
   studentsByClass: Map<string, StudentRecord[]>,
   classSubjectsByClass: Map<string, ClassSubjectRecord[]>,
   teachers: TeacherRecord[]
@@ -978,6 +1033,25 @@ function createAttendance(
   enrollments.forEach((enrollment, idx) => enrollmentIndexMap.set(enrollment.id, idx));
 
   const teacherById = new Map(teachers.map((teacher) => [teacher.id, teacher]));
+  const scheduleByClassSubject = new Map<string, ScheduleRecord[]>();
+  schedules.forEach((schedule) => {
+    const list = scheduleByClassSubject.get(schedule.classSubjectId) ?? [];
+    list.push(schedule);
+    scheduleByClassSubject.set(schedule.classSubjectId, list);
+  });
+
+  const isoDay = (value: string) => {
+    const [year, month, day] = value.split("-").map((part) => Number.parseInt(part ?? "1", 10));
+    const dt = new Date(Date.UTC(year, (month ?? 1) - 1, day ?? 1));
+    const dayOfWeek = dt.getUTCDay();
+    return dayOfWeek === 0 ? 7 : dayOfWeek;
+  };
+
+  const buildTimestamp = (date: string, seed: number) => {
+    const base = new Date(`${date}T07:00:00.000Z`);
+    const shifted = new Date(base.getTime() + seed * 7 * 60 * 1000);
+    return shifted.toISOString();
+  };
 
   enrollments.forEach((enrollment) => {
     const classStudents = studentsByClass.get(enrollment.classId) ?? [];
@@ -1005,6 +1079,8 @@ function createAttendance(
         status: status as AttendanceRecord["status"],
         sessionType: "Harian",
         note,
+        recordedAt: buildTimestamp(date, studentIndex + baseIndex + dateIndex),
+        updatedAt: buildTimestamp(date, studentIndex + baseIndex + dateIndex + 1),
       });
     });
   });
@@ -1014,6 +1090,12 @@ function createAttendance(
     MAPEL_ATTENDANCE_DATES.forEach((date, dateIndex) => {
       keySubjects.forEach((mapping, subjectIndex) => {
         const teacher = teacherById.get(mapping.teacherId);
+        const scheduleList = scheduleByClassSubject.get(mapping.id) ?? [];
+        const dayOfWeek = isoDay(date);
+        const scheduleForDay =
+          scheduleList.find((schedule) => schedule.dayOfWeek === dayOfWeek) ?? scheduleList[0];
+        const slotNumber = scheduleForDay?.slot ?? ((subjectIndex + dateIndex) % 6) + 1;
+
         enrollments
           .filter((enrollment) => enrollment.classId === classId)
           .forEach((enrollment, enrollIndex) => {
@@ -1038,8 +1120,11 @@ function createAttendance(
               status: status as AttendanceRecord["status"],
               sessionType: "Mapel",
               subjectId: mapping.subjectId,
-              teacherId: teacher?.id,
+              teacherId: teacher?.id ?? mapping.teacherId,
+              slot: slotNumber,
               note,
+              recordedAt: buildTimestamp(date, enrollIndex + subjectIndex + dateIndex),
+              updatedAt: buildTimestamp(date, enrollIndex + subjectIndex + dateIndex + 1),
             });
           });
       });
@@ -1047,6 +1132,242 @@ function createAttendance(
   });
 
   return attendance;
+}
+
+function createCalendarEvents(
+  terms: TermRecord[],
+  classes: ClassRecord[],
+  teachers: TeacherRecord[]
+): CalendarEventRecord[] {
+  const activeTerm = terms.find((term) => term.active) ?? terms[0];
+  const otherTerm = terms.find((term) => term.id !== activeTerm.id) ?? terms[0];
+
+  const classIdsByLevel = classes.reduce<Record<number, string[]>>((acc, klass) => {
+    if (!acc[klass.level]) {
+      acc[klass.level] = [];
+    }
+    acc[klass.level].push(klass.id);
+    return acc;
+  }, {});
+
+  const organizerAcademic =
+    teachers.find((teacher) => teacher.fullName.toLowerCase().includes("kurikulum"))?.fullName ??
+    "Waka Kurikulum";
+  const organizerStudentAffairs =
+    teachers.find((teacher) => teacher.fullName.toLowerCase().includes("kesiswaan"))?.fullName ??
+    "Kesiswaan";
+
+  return [
+    {
+      id: "cal_mpls_2024",
+      title: "Masa Pengenalan Lingkungan Sekolah",
+      description:
+        "Orientasi siswa baru dengan tur kampus, pengenalan budaya sekolah, dan sesi penguatan karakter.",
+      category: "SCHOOL_ACTIVITY",
+      startDate: "2024-07-15",
+      endDate: "2024-07-17",
+      termId: activeTerm.id,
+      organizer: organizerStudentAffairs,
+      location: "Aula & Lingkungan Sekolah",
+      createdById: "user_admin_tu",
+      audience: "SISWA",
+      relatedClassIds: [...(classIdsByLevel[10] ?? [])],
+      tags: ["MPLS", "Siswa Baru"],
+      allDay: true,
+      source: "MANUAL",
+    },
+    {
+      id: "cal_effective_block1",
+      title: "Hari Efektif Pembelajaran Blok 1",
+      description: "Rencana belajar inti untuk memasuki materi semester ganjil.",
+      category: "EFFECTIVE_DAY",
+      startDate: "2024-07-22",
+      endDate: "2024-08-16",
+      termId: activeTerm.id,
+      organizer: "Tim Akademik",
+      createdById: "user_admin_tu",
+      audience: "ALL",
+      relatedClassIds: classes.map((klass) => klass.id),
+      tags: ["Pembelajaran", "Blok 1"],
+      allDay: true,
+      source: "MANUAL",
+    },
+    {
+      id: "cal_libur_kemerdekaan",
+      title: "Libur Nasional: Hari Kemerdekaan",
+      description: "Memperingati Hari Kemerdekaan Republik Indonesia ke-79.",
+      category: "HOLIDAY",
+      startDate: "2024-08-17",
+      endDate: "2024-08-18",
+      termId: activeTerm.id,
+      organizer: "Pemerintah RI",
+      location: "Seluruh Indonesia",
+      createdById: "user_admin_tu",
+      audience: "ALL",
+      tags: ["Libur Nasional"],
+      allDay: true,
+      source: "SYNTHETIC",
+    },
+    {
+      id: "cal_rapat_kurikulum_sep",
+      title: "Rapat Koordinasi Kurikulum",
+      description:
+        "Evaluasi perangkat ajar, pembagian modul projek P5, dan sinkronisasi jadwal remedial.",
+      category: "MEETING",
+      startDate: "2024-09-03T09:00:00+07:00",
+      endDate: "2024-09-03T11:30:00+07:00",
+      termId: activeTerm.id,
+      organizer: organizerAcademic,
+      location: "Ruang Rapat Kepala Sekolah",
+      createdById: "user_admin_tu",
+      audience: "GURU",
+      tags: ["Rapat", "Kurikulum"],
+      relatedClassIds: [],
+      source: "MANUAL",
+    },
+    {
+      id: "cal_exkul_it_fair",
+      title: "Ekskul IT Fair & Lomba Coding",
+      description:
+        "Expo karya siswa dan lomba pemrograman antar kelas. Tim juri berasal dari alumni industri.",
+      category: "EXTRACURRICULAR",
+      startDate: "2024-09-21T08:00:00+07:00",
+      endDate: "2024-09-21T14:00:00+07:00",
+      termId: activeTerm.id,
+      organizer: "Pembina OSIS",
+      location: "Hall Serbaguna",
+      createdById: "user_admin_tu",
+      audience: "SISWA",
+      relatedClassIds: [...(classIdsByLevel[10] ?? []), ...(classIdsByLevel[11] ?? [])],
+      tags: ["OSIS", "Ekskul", "Teknologi"],
+      source: "MANUAL",
+    },
+    {
+      id: "cal_inactive_maintenance",
+      title: "Hari Tidak Efektif: Pemeliharaan Gedung",
+      description:
+        "Perawatan instalasi listrik dan pengecatan ruang laboratorium. Seluruh kegiatan belajar dialihkan daring.",
+      category: "INACTIVE_DAY",
+      startDate: "2024-11-02",
+      endDate: "2024-11-03",
+      termId: activeTerm.id,
+      organizer: "Tim Sarpras",
+      createdById: "user_admin_tu",
+      audience: "ALL",
+      relatedClassIds: classes.map((klass) => klass.id),
+      tags: ["Pemeliharaan", "Sarpras"],
+      allDay: true,
+      source: "MANUAL",
+    },
+    {
+      id: "cal_kickoff_semester_genap",
+      title: "Kick-off Persiapan Semester Genap",
+      description:
+        "Workshop strategi pembelajaran tematik dan penyelarasan proyek kewirausahaan semester genap.",
+      category: "MEETING",
+      startDate: `${otherTerm.startDate}T08:30:00+07:00`,
+      endDate: `${otherTerm.startDate}T12:00:00+07:00`,
+      termId: otherTerm.id,
+      organizer: organizerAcademic,
+      location: "Ruang Multimedia",
+      createdById: "user_admin_tu",
+      audience: "GURU",
+      tags: ["Workshop", "Persiapan Semester"],
+      relatedClassIds: [],
+      source: "MANUAL",
+    },
+  ];
+}
+
+function createExamEvents(
+  terms: TermRecord[],
+  classes: ClassRecord[],
+  subjects: SubjectRecord[]
+): ExamEventRecord[] {
+  const activeTerm = terms.find((term) => term.active) ?? terms[0];
+  const otherTerm = terms.find((term) => term.id !== activeTerm.id) ?? terms[0];
+  const allClasses = classes.map((klass) => klass.id);
+  const grade11Classes = classes.filter((klass) => klass.level === 11).map((klass) => klass.id);
+  const grade12Classes = classes.filter((klass) => klass.level === 12).map((klass) => klass.id);
+
+  const mathSubject =
+    subjects.find((subject) => subject.code === "MAT") ??
+    subjects.find((subject) => subject.name.toLowerCase().includes("matematika"));
+
+  return [
+    {
+      id: "exam_pts_ganjil",
+      name: "Ujian Tengah Semester Ganjil",
+      termId: activeTerm.id,
+      examType: "PTS",
+      startDate: "2024-10-08",
+      endDate: "2024-10-12",
+      scope: "SCHOOL",
+      relatedClassIds: allClasses,
+      organizer: "Waka Kurikulum",
+      description:
+        "Penilaian tengah semester ganjil untuk seluruh jurusan dengan format terintegrasi AKM.",
+      publishedAt: "2024-09-25T02:00:00+07:00",
+      tags: ["Penilaian", "AKM"],
+    },
+    {
+      id: "exam_tryout_utbk",
+      name: "Try Out UTBK Nasional",
+      termId: activeTerm.id,
+      examType: "TRYOUT",
+      startDate: "2024-11-18",
+      endDate: "2024-11-19",
+      scope: "GRADE",
+      relatedClassIds: grade12Classes,
+      organizer: "Bimbingan Konseling",
+      description:
+        "Simulasi UTBK bersama platform Mitra Prestasi untuk memetakan kesiapan siswa kelas XII.",
+      publishedAt: "2024-10-20T04:00:00+07:00",
+      tags: ["UTBK", "Kelas XII"],
+    },
+    {
+      id: "exam_praktik_seni",
+      termId: activeTerm.id,
+      name: "Ujian Praktik Seni Budaya",
+      examType: "PRAKTEK",
+      startDate: "2024-11-25",
+      endDate: "2024-11-27",
+      scope: "GRADE",
+      relatedClassIds: grade11Classes,
+      organizer: "Guru Seni Budaya",
+      description: `Gelaran karya praktik Seni Budaya terintegrasi dengan tema proyek Profil Pelajar Pancasila. Fokus pada ${mathSubject?.name ?? "mata pelajaran seni"}.`,
+      publishedAt: "2024-11-05T03:00:00+07:00",
+      tags: ["Praktik", "P5"],
+    },
+    {
+      id: "exam_pas_ganjil",
+      name: "Penilaian Akhir Semester Ganjil",
+      termId: activeTerm.id,
+      examType: "PAS",
+      startDate: "2024-12-16",
+      endDate: "2024-12-20",
+      scope: "SCHOOL",
+      relatedClassIds: allClasses,
+      organizer: "Waka Kurikulum",
+      description: "PAS ganjil seluruh mapel sebagai penentu rapor semester.",
+      publishedAt: "2024-11-30T01:30:00+07:00",
+      tags: ["Penilaian", "Rapor"],
+    },
+    {
+      id: "exam_pts_genap",
+      name: "Ujian Tengah Semester Genap",
+      termId: otherTerm.id,
+      examType: "PTS",
+      startDate: "2025-03-10",
+      endDate: "2025-03-15",
+      scope: "SCHOOL",
+      relatedClassIds: allClasses,
+      organizer: "Waka Kurikulum",
+      description: "Simulasi Ujian Tengah Semester Genap untuk persiapan kelulusan.",
+      publishedAt: "2025-02-14T02:00:00+07:00",
+      tags: ["Penilaian", "Semester Genap"],
+    },
+  ];
 }
 
 function createAnnouncements(classes: ClassRecord[]): AnnouncementRecord[] {

@@ -218,6 +218,110 @@ describe("MSW Fixtures", () => {
     expect(typeof attendanceArchive?.fileSize).toBe("number");
   });
 
+  it("Kalender akademik MSW menyediakan event lintas kategori serta jadwal ujian terintegrasi", () => {
+    const calendarEvents = mswTestUtils.list("calendar-events") as Array<{
+      id: string;
+      category: string;
+      startDate: string;
+      termId?: string;
+    }>;
+    expect(Array.isArray(calendarEvents)).toBe(true);
+    expect(calendarEvents.length).toBeGreaterThan(0);
+
+    const categorySet = new Set(calendarEvents.map((event) => event.category));
+    [
+      "EFFECTIVE_DAY",
+      "HOLIDAY",
+      "MEETING",
+      "EXTRACURRICULAR",
+      "INACTIVE_DAY",
+      "SCHOOL_ACTIVITY",
+    ].forEach((category) => {
+      expect(categorySet.has(category)).toBe(true);
+    });
+
+    const examEvents = mswTestUtils.list("exam-events") as Array<{
+      id: string;
+      examType: string;
+      startDate: string;
+      termId?: string;
+    }>;
+    expect(examEvents.length).toBeGreaterThanOrEqual(4);
+    const ptsExam = examEvents.find((event) => event.examType === "PTS");
+    expect(ptsExam).toBeTruthy();
+
+    const manualHoliday = calendarEvents.find((event) => event.id === "cal_libur_kemerdekaan");
+    expect(manualHoliday?.startDate).toContain("2024-08-17");
+
+    const created = mswTestUtils.create("calendar-events", {
+      title: "Uji Coba Event Kalender",
+      category: "SCHOOL_ACTIVITY",
+      startDate: "2024-09-01",
+      endDate: "2024-09-01",
+      termId: manualHoliday?.termId,
+      allDay: true,
+    }) as { id: string; startDate: string; category: string };
+
+    expect(created).toBeTruthy();
+    expect(created.category).toBe("SCHOOL_ACTIVITY");
+    expect(created.startDate).toContain("2024-09-01");
+
+    mswTestUtils.remove("calendar-events", created.id);
+  });
+
+  it("Dataset absensi mapel menyertakan slot jam pelajaran dan timestamp pembaruan", () => {
+    const schedules = mswTestUtils.list("schedules") as Array<{
+      id: string;
+      slot?: number;
+    }>;
+    expect(schedules.length).toBeGreaterThan(0);
+    schedules.forEach((schedule) => {
+      expect(typeof schedule.slot).toBe("number");
+    });
+
+    const attendanceRecords = mswTestUtils.list("attendance") as Array<{
+      id: string;
+      enrollmentId: string;
+      classId: string;
+      date: string;
+      sessionType?: string;
+      slot?: number;
+      recordedAt?: string;
+      updatedAt?: string;
+      subjectId?: string;
+      teacherId?: string;
+      status: string;
+    }>;
+
+    const mapelRecord = attendanceRecords.find((record) => record.sessionType === "Mapel");
+    expect(mapelRecord).toBeTruthy();
+    expect(typeof mapelRecord?.slot).toBe("number");
+    expect(typeof mapelRecord?.recordedAt).toBe("string");
+    expect(typeof mapelRecord?.updatedAt).toBe("string");
+
+    if (!mapelRecord) {
+      throw new Error("Tes membutuhkan minimal satu record absensi mapel.");
+    }
+
+    const created = mswTestUtils.create("attendance", {
+      enrollmentId: mapelRecord.enrollmentId,
+      classId: mapelRecord.classId,
+      date: mapelRecord.date,
+      status: "H",
+      sessionType: "Mapel",
+      subjectId: mapelRecord.subjectId,
+      teacherId: mapelRecord.teacherId,
+      slot: mapelRecord.slot,
+      note: "Uji coba penyimpanan",
+    }) as { id: string; slot?: number };
+
+    expect(created).toBeTruthy();
+    expect(created.slot).toBe(mapelRecord.slot);
+
+    const removed = mswTestUtils.remove("attendance", created.id);
+    expect(removed?.id).toBe(created.id);
+  });
+
   it("Tersedia akun MSW untuk setiap peran utama", () => {
     const roles = [
       "SUPERADMIN",
