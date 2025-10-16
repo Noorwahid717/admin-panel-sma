@@ -77,6 +77,28 @@ type ScheduleRecord = {
   slot: number;
 };
 
+export type TeacherPreferenceRecord = {
+  id: string;
+  teacherId: string;
+  preferredDays: number[];
+  blockedDays: number[];
+  preferredSlots: number[];
+  maxDailySessions: number;
+  availabilityLevel: "HIGH" | "MEDIUM" | "LOW";
+  notes: string;
+};
+
+export type SemesterScheduleSlotRecord = {
+  id: string;
+  classId: string;
+  dayOfWeek: number;
+  slot: number;
+  teacherId: string | null;
+  subjectId: string | null;
+  status: "EMPTY" | "PREFERENCE" | "COMPROMISE" | "CONFLICT";
+  locked?: boolean;
+};
+
 type GradeComponentRecord = {
   id: string;
   name: string;
@@ -280,6 +302,8 @@ export type SeedData = {
   enrollments: EnrollmentRecord[];
   classSubjects: ClassSubjectRecord[];
   schedules: ScheduleRecord[];
+  teacherPreferences: TeacherPreferenceRecord[];
+  semesterSchedule: SemesterScheduleSlotRecord[];
   gradeComponents: GradeComponentRecord[];
   gradeConfigs: GradeConfigRecord[];
   grades: GradeRecord[];
@@ -345,6 +369,8 @@ export function createSeedData(): SeedData {
     classSubjectsByClass,
     teachers
   );
+  const teacherPreferences = createTeacherPreferences(teachers);
+  const semesterSchedule = createSemesterSchedule(classes, classSubjects, teacherPreferences);
   const calendarEvents = createCalendarEvents(terms, classes, teachers);
   const examEvents = createExamEvents(terms, classes, subjects);
   const announcements = createAnnouncements(classes);
@@ -372,6 +398,8 @@ export function createSeedData(): SeedData {
     enrollments,
     classSubjects,
     schedules,
+    teacherPreferences,
+    semesterSchedule,
     gradeComponents,
     gradeConfigs,
     grades,
@@ -1132,6 +1160,125 @@ function createAttendance(
   });
 
   return attendance;
+}
+
+function createTeacherPreferences(teachers: TeacherRecord[]): TeacherPreferenceRecord[] {
+  const dayPatterns: Array<{
+    preferred: number[];
+    blocked: number[];
+    level: "HIGH" | "MEDIUM" | "LOW";
+    note: string;
+  }> = [
+    {
+      preferred: [1, 2, 3, 4, 5],
+      blocked: [],
+      level: "HIGH",
+      note: "Fleksibel mengajar sepanjang minggu.",
+    },
+    {
+      preferred: [1, 2, 3, 4],
+      blocked: [5, 6],
+      level: "MEDIUM",
+      note: "Menghindari Jumat dan Sabtu untuk kegiatan laboratorium.",
+    },
+    { preferred: [1, 2, 3], blocked: [6], level: "MEDIUM", note: "Lebih fokus di awal pekan." },
+    {
+      preferred: [2, 3, 4, 5],
+      blocked: [1],
+      level: "MEDIUM",
+      note: "Tidak tersedia setiap Senin karena koordinasi kurikulum.",
+    },
+    {
+      preferred: [1, 2],
+      blocked: [5, 6],
+      level: "LOW",
+      note: "Jadwal mengajar padat di sekolah lain.",
+    },
+  ];
+
+  const slotPatterns: Array<number[]> = [
+    [1, 2, 3, 4],
+    [2, 3, 4, 5],
+    [1, 2, 5, 6],
+    [3, 4, 5, 6],
+    [1, 2, 3, 4, 5, 6],
+  ];
+
+  return teachers.map((teacher, index) => {
+    const dayPattern = dayPatterns[index % dayPatterns.length];
+    const preferredSlots = slotPatterns[index % slotPatterns.length];
+    const maxDailySessions = 2 + (index % 3);
+    return {
+      id: `pref_${teacher.id}`,
+      teacherId: teacher.id,
+      preferredDays: [...dayPattern.preferred],
+      blockedDays: [...dayPattern.blocked],
+      preferredSlots,
+      maxDailySessions,
+      availabilityLevel: dayPattern.level,
+      notes: dayPattern.note,
+    };
+  });
+}
+
+function createSemesterSchedule(
+  classes: ClassRecord[],
+  classSubjects: ClassSubjectRecord[],
+  preferences: TeacherPreferenceRecord[]
+): SemesterScheduleSlotRecord[] {
+  const schedule: SemesterScheduleSlotRecord[] = [];
+  const slotsPerDay = 8;
+  const days = [1, 2, 3, 4, 5, 6];
+
+  const preferredDayLookup = new Map<string, Set<number>>();
+  const preferredSlotLookup = new Map<string, Set<number>>();
+  preferences.forEach((pref) => {
+    preferredDayLookup.set(pref.teacherId, new Set(pref.preferredDays));
+    preferredSlotLookup.set(pref.teacherId, new Set(pref.preferredSlots));
+  });
+
+  classes.forEach((klass, classIndex) => {
+    const relatedSubjects = classSubjects.filter((item) => item.classroomId === klass.id);
+    const teacherRotation = [...relatedSubjects];
+
+    days.forEach((day) => {
+      for (let slot = 1; slot <= slotsPerDay; slot += 1) {
+        const assignmentIndex =
+          (classIndex * days.length * slotsPerDay + (day - 1) * slotsPerDay + (slot - 1)) %
+          teacherRotation.length;
+        const mapping = teacherRotation[assignmentIndex];
+        if (!mapping) {
+          schedule.push({
+            id: `sem_${klass.id}_${day}_${slot}`,
+            classId: klass.id,
+            dayOfWeek: day,
+            slot,
+            teacherId: null,
+            subjectId: null,
+            status: "EMPTY",
+          });
+          continue;
+        }
+
+        const preferredDays = preferredDayLookup.get(mapping.teacherId) ?? new Set<number>();
+        const preferredSlots = preferredSlotLookup.get(mapping.teacherId) ?? new Set<number>();
+        const inPreference = preferredDays.has(day) && preferredSlots.has(slot);
+
+        schedule.push({
+          id: `sem_${klass.id}_${day}_${slot}`,
+          classId: klass.id,
+          dayOfWeek: day,
+          slot,
+          teacherId: mapping.teacherId,
+          subjectId: mapping.subjectId,
+          status: inPreference ? "PREFERENCE" : "COMPROMISE",
+          locked: inPreference && slot % 3 === 0,
+        });
+      }
+    });
+  });
+
+  return schedule;
 }
 
 function createCalendarEvents(

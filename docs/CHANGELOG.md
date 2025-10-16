@@ -23,20 +23,23 @@ menyatu dengan jadwal MSW sehingga guru dapat menandai kehadiran dalam hitungan 
    UI dapat menampilkan jam pelajaran dan indikator sinkronisasi.
 7. Menyajikan halaman Rekap Kehadiran lengkap dengan tabel analitik, grafik mingguan,
    ekspor CSV, dan highlight Top 3 siswa paling disiplin.
+8. Merilis Generator Jadwal Otomatis dengan drag-and-drop, highlight preferensi guru,
+   dan panel fairness distribusi.
 
 ### 🔍 Verification
 
 - `pnpm --filter @apps/admin test` _(gagal di sandbox CI dengan `write EPIPE`; jalankan lokal
   untuk memastikan seluruh skenario Vitest lulus)._
-- Manual smoke test: `/calendar`, `/attendance/daily`, dan `/attendance` pada dev server dengan MSW aktif.
+- Manual smoke test: `/calendar`, `/attendance/daily`, `/attendance`, dan `/schedules/generator` pada dev server dengan MSW aktif.
 
 ### 📚 Related Documentation
 
 - `docs/checklist.md` (update status kalender & absensi terpadu)
 - `apps/admin/src/pages/calendar.tsx`, `apps/admin/src/pages/attendance-daily.tsx`,
-  `apps/admin/src/pages/attendance-analytics.tsx`
+  `apps/admin/src/pages/attendance-analytics.tsx`, `apps/admin/src/pages/schedule-generator.tsx`
 - `apps/admin/src/mocks/seed.ts`, `apps/admin/src/hooks/use-events.ts`,
-  `apps/admin/src/hooks/use-attendance-session.ts`, `apps/admin/src/hooks/use-attendance-analytics.ts`
+  `apps/admin/src/hooks/use-attendance-session.ts`, `apps/admin/src/hooks/use-attendance-analytics.ts`,
+  `apps/admin/src/hooks/use-schedule-generator.ts`
 
 ## [2025-10-15] - MSW Mock API Revamp + Documentation ✅
 

@@ -1,5 +1,9 @@
 import { http, HttpResponse } from "msw";
-import { createSeedData } from "./seed";
+import {
+  createSeedData,
+  type SemesterScheduleSlotRecord,
+  type TeacherPreferenceRecord,
+} from "./seed";
 
 /**
  * Skenario MSW: SMA Negeri Harapan Nusantara (TP 2024/2025)
@@ -22,6 +26,8 @@ const students = [...seed.students];
 const enrollments = [...seed.enrollments];
 const classSubjects = [...seed.classSubjects];
 const schedules = [...seed.schedules];
+const teacherPreferences = [...seed.teacherPreferences];
+const semesterSchedule = [...seed.semesterSchedule];
 const gradeComponents = [...seed.gradeComponents];
 const gradeConfigs = [...seed.gradeConfigs];
 const grades = [...seed.grades];
@@ -166,6 +172,8 @@ const resourceKeys = [
   "grade-configs",
   "grades",
   "attendance",
+  "teacher-preferences",
+  "semester-schedule",
   "calendar-events",
   "exam-events",
   "class-subjects",
@@ -190,6 +198,8 @@ const stores: Record<ResourceKey, Record<string, any>[]> = {
   "grade-configs": gradeConfigs,
   grades,
   attendance,
+  "teacher-preferences": teacherPreferences,
+  "semester-schedule": semesterSchedule,
   "calendar-events": calendarEvents,
   "exam-events": examEvents,
   "class-subjects": classSubjects,
@@ -202,7 +212,7 @@ const stores: Record<ResourceKey, Record<string, any>[]> = {
 };
 
 const resourcePathRegex =
-  /\/(?:api(?:\/v1)?)?\/?(students|teachers|classes|subjects|terms|enrollments|grade-components|grade-configs|grades|attendance|calendar-events|exam-events|class-subjects|schedules|announcements|behavior-notes|mutations|archives|dashboard)(?:\/([^/?]+))?\/?$/;
+  /\/(?:api(?:\/v1)?)?\/?(students|teachers|classes|subjects|terms|enrollments|grade-components|grade-configs|grades|attendance|teacher-preferences|semester-schedule|calendar-events|exam-events|class-subjects|schedules|announcements|behavior-notes|mutations|archives|dashboard)(?:\/([^/?]+))?\/?$/;
 
 const parseResourceRequest = (request: Request) => {
   const url = new URL(request.url);
@@ -346,6 +356,19 @@ const normalizers: Partial<
     const endDate = sanitizeDateTime(next.endDate);
     if (startDate) next.startDate = startDate;
     if (endDate) next.endDate = endDate;
+    return next;
+  },
+  "teacher-preferences": (data) => ({ ...data }),
+  "semester-schedule": (data) => {
+    const next = { ...data };
+    if (typeof next.dayOfWeek === "string") {
+      const parsed = Number(next.dayOfWeek);
+      next.dayOfWeek = Number.isNaN(parsed) ? next.dayOfWeek : parsed;
+    }
+    if (typeof next.slot === "string") {
+      const parsed = Number(next.slot);
+      next.slot = Number.isNaN(parsed) ? next.slot : parsed;
+    }
     return next;
   },
   "grade-configs": (data) => {
@@ -753,6 +776,13 @@ export const mswTestUtils = {
       weeklyAttendance,
     };
   },
+  getSemesterSchedule(classId?: string) {
+    const slots = clone(semesterSchedule);
+    if (!classId) {
+      return slots;
+    }
+    return slots.filter((slot) => slot.classId === classId);
+  },
 };
 
 // Simulation flags (toggle via query param or by editing these vars during dev)
@@ -847,6 +877,90 @@ export async function createHandlers() {
     http.get(/\/api(?:\/v1)?\/dashboard\/academics$/, () =>
       HttpResponse.json(principalDashboard, { status: 200 })
     ),
+
+    http.post(/\/api(?:\/v1)?\/schedule\/generate$/, async ({ request }) => {
+      const body = (await request.json().catch(() => ({}))) as {
+        classId?: string;
+        termId?: string;
+      };
+      const targetClassId = body.classId ?? classes[0]?.id;
+      if (!targetClassId) {
+        return HttpResponse.json({ message: "Class not found" }, { status: 404 });
+      }
+
+      const relevantSlots = semesterSchedule.filter((slot) => slot.classId === targetClassId);
+      if (relevantSlots.length === 0) {
+        return HttpResponse.json(
+          { slots: [], summary: { preferenceMatches: 0, compromise: 0, empty: 0, confidence: 0 } },
+          { status: 200 }
+        );
+      }
+
+      const preferenceByTeacher = new Map<string, TeacherPreferenceRecord>();
+      teacherPreferences.forEach((pref) => {
+        preferenceByTeacher.set(pref.teacherId, pref);
+      });
+
+      const generated = relevantSlots.map((slot) => {
+        if (!slot.teacherId || !slot.subjectId) {
+          return { ...slot, status: "EMPTY" as const };
+        }
+        const pref = preferenceByTeacher.get(slot.teacherId);
+        const preferredDay = pref ? pref.preferredDays.includes(slot.dayOfWeek) : false;
+        const preferredSlot = pref ? pref.preferredSlots.includes(slot.slot) : false;
+        const blocked = pref ? pref.blockedDays.includes(slot.dayOfWeek) : false;
+        let status: "PREFERENCE" | "COMPROMISE" | "CONFLICT" = "PREFERENCE";
+        if (blocked) {
+          status = "CONFLICT";
+        } else if (!(preferredDay && preferredSlot)) {
+          status = "COMPROMISE";
+        }
+        return { ...slot, status };
+      });
+
+      const preferenceMatches = generated.filter((slot) => slot.status === "PREFERENCE").length;
+      const conflicts = generated.filter((slot) => slot.status === "CONFLICT").length;
+      const assigned = generated.filter((slot) => slot.teacherId && slot.subjectId).length;
+      const empty = generated.length - assigned;
+      const compromise = assigned - preferenceMatches - conflicts;
+      const confidence =
+        assigned === 0 ? 0 : Number(((preferenceMatches / assigned) * 100).toFixed(1));
+
+      return HttpResponse.json(
+        {
+          slots: generated,
+          summary: {
+            preferenceMatches,
+            compromise,
+            conflicts,
+            empty,
+            confidence,
+          },
+        },
+        { status: 200 }
+      );
+    }),
+
+    http.post(/\/api(?:\/v1)?\/schedule\/save$/, async ({ request }) => {
+      const body = (await request.json().catch(() => ({}))) as {
+        classId?: string;
+        slots?: SemesterScheduleSlotRecord[];
+      };
+      if (!body.classId || !Array.isArray(body.slots)) {
+        return HttpResponse.json({ message: "Invalid payload" }, { status: 400 });
+      }
+
+      const remaining = semesterSchedule.filter((slot) => slot.classId !== body.classId);
+      const sanitizedSlots = body.slots.map((slot) => ({
+        ...slot,
+        classId: body.classId,
+      }));
+      semesterSchedule.length = 0;
+      semesterSchedule.push(...remaining, ...sanitizedSlots);
+      stores["semester-schedule"] = semesterSchedule;
+
+      return HttpResponse.json({ success: true, count: sanitizedSlots.length }, { status: 200 });
+    }),
 
     http.get(resourcePathRegex, ({ request }) => {
       const parsed = parseResourceRequest(request);

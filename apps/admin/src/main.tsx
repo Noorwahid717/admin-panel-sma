@@ -67,6 +67,7 @@ import { AppLayout } from "./components/layout/app-layout";
 import { ClassesPage } from "./pages/classes";
 import { ClassesShow } from "./pages/classes-show";
 import { SchedulesPage } from "./pages/schedules";
+import { ScheduleGeneratorPage } from "./pages/schedule-generator";
 import { CalendarPage } from "./pages/calendar";
 
 import "@refinedev/antd/dist/reset.css";
@@ -484,6 +485,10 @@ async function bootstrap() {
                           <>
                             <Route path="daily" element={<AttendanceDailyPage />} />
                             <Route path="lesson" element={<AttendanceLessonPage />} />
+                          </>
+                        ) : resource.name === "schedules" ? (
+                          <>
+                            <Route path="generator" element={<ScheduleGeneratorPage />} />
                           </>
                         ) : null}
                       </Route>

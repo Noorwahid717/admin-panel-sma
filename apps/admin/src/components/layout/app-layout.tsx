@@ -29,6 +29,7 @@ import {
   SlidersOutlined,
   PercentageOutlined,
   BarChartOutlined,
+  AppstoreAddOutlined,
 } from "@ant-design/icons";
 import { Outlet, useLocation } from "react-router-dom";
 import { useGetIdentity, useList, useLogout, useNavigation } from "@refinedev/core";
@@ -95,6 +96,12 @@ const buildNavItems = (logout: () => void): NavItem[] => [
         icon: <ScheduleOutlined />,
         resource: "schedules",
         path: "/schedules",
+      },
+      {
+        key: "akademik-schedule-generator",
+        label: "Generator Jadwal",
+        icon: <AppstoreAddOutlined />,
+        path: "/schedules/generator",
       },
       {
         key: "akademik-subjects",

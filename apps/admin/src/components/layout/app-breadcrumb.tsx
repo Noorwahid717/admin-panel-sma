@@ -19,6 +19,8 @@ const SEGMENT_LABELS: Record<string, string> = {
   "classes-show": "Detail Kelas",
   "classes-create": "Tambah Kelas",
   schedules: "Jadwal",
+  "schedules-generator": "Generator Jadwal",
+  generator: "Generator Jadwal",
   "schedules-create": "Tambah Jadwal",
   "schedules-edit": "Edit Jadwal",
   "schedules-show": "Detail Jadwal",

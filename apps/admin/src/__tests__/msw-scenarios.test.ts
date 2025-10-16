@@ -338,6 +338,26 @@ describe("MSW Fixtures", () => {
     });
   });
 
+  it("Preferensi guru dan jadwal semester tersedia untuk generator", () => {
+    const preferences = mswTestUtils.list("teacher-preferences");
+    expect(preferences.length).toBeGreaterThan(0);
+    preferences.forEach((pref) => {
+      expect(Array.isArray(pref.preferredDays)).toBe(true);
+      expect(pref.preferredDays.length).toBeGreaterThan(0);
+    });
+
+    const classes = mswTestUtils.list("classes");
+    const classId = classes[0].id as string;
+    const slots = mswTestUtils.getSemesterSchedule(classId);
+    expect(slots.length).toBeGreaterThan(0);
+    slots.forEach((slot) => {
+      expect(slot.dayOfWeek).toBeGreaterThanOrEqual(1);
+      expect(slot.dayOfWeek).toBeLessThanOrEqual(6);
+      expect(slot.slot).toBeGreaterThanOrEqual(1);
+      expect(slot.slot).toBeLessThanOrEqual(8);
+    });
+  });
+
   it("Tersedia akun MSW untuk setiap peran utama", () => {
     const roles = [
       "SUPERADMIN",
