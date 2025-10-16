@@ -7,7 +7,7 @@ import routerProvider, {
   NavigateToResource,
   UnsavedChangesNotifier,
 } from "@refinedev/react-router-v6";
-import { ThemedLayoutV2, ErrorComponent, notificationProvider } from "@refinedev/antd";
+import { ErrorComponent, notificationProvider } from "@refinedev/antd";
 import { ConfigProvider, App as AntdApp, theme } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -62,6 +62,10 @@ import { SetupWizard } from "./pages/setup-wizard";
 import { ImportStatusPage } from "./pages/import-status";
 import { AnnouncementsPage } from "./pages/announcements";
 import { BehaviorNotesPage } from "./pages/behavior-notes";
+import { AppLayout } from "./components/layout/app-layout";
+import { ClassesPage } from "./pages/classes";
+import { ClassesShow } from "./pages/classes-show";
+import { SchedulesPage } from "./pages/schedules";
 
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
@@ -348,14 +352,7 @@ if (disableCustomLayout) {
 }
 
 // Pastikan Outlet selalu dirender baik saat pakai ThemedLayoutV2 maupun plain
-const LayoutWrapper: React.FC = () =>
-  disableCustomLayout ? (
-    <Outlet />
-  ) : (
-    <ThemedLayoutV2>
-      <Outlet />
-    </ThemedLayoutV2>
-  );
+const LayoutWrapper: React.FC = () => (disableCustomLayout ? <Outlet /> : <AppLayout />);
 
 async function bootstrap() {
   if (shouldStartMSW) {
@@ -439,6 +436,10 @@ async function bootstrap() {
                               <AnnouncementsPage />
                             ) : resource.name === "behavior-notes" ? (
                               <BehaviorNotesPage />
+                            ) : resource.name === "schedules" ? (
+                              <SchedulesPage />
+                            ) : resource.name === "classes" ? (
+                              <ClassesPage />
                             ) : (
                               <ResourceList />
                             )
@@ -456,7 +457,10 @@ async function bootstrap() {
                             element={resourceRouteConfig[resource.name]!.edit}
                           />
                         ) : null}
-                        <Route path="show/:id" element={<ResourceShow />} />
+                        <Route
+                          path="show/:id"
+                          element={resource.name === "classes" ? <ClassesShow /> : <ResourceShow />}
+                        />
                         {resource.name === "attendance" ? (
                           <>
                             <Route path="daily" element={<AttendanceDailyPage />} />
