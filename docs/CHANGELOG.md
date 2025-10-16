@@ -1,5 +1,28 @@
 # Changelog - Build & Runtime Fixes
 
+## [2025-10-27] - Users & Wali Kelas Experience ✅
+
+### 🎯 Objective
+
+Memperkenalkan UI administrasi pengguna dan penugasan wali kelas yang sepenuhnya berjalan di atas seed MSW sehingga onboarding operator sekolah lebih cepat tanpa menunggu backend.
+
+### ✏️ Changes
+
+1. Menambahkan halaman `UsersPage` dengan ringkasan role, filter pencarian, drawer detail, dan aksi reset password mock yang terhubung ke resource `users` milik MSW.
+2. Memperluas `mocks/handlers.ts` agar mendukung CRUD `users`, menjaga sinkronisasi dengan akun login mock, serta menambahkan resource `users`/`homerooms` pada navigasi.
+3. Membuat halaman `HomeroomAssignmentsPage` yang menampilkan daftar kelas, statistik penugasan, filter tingkat & jurusan, serta drawer untuk mengganti wali kelas dengan data MSW real-time.
+
+### 🔍 Verification
+
+- `pnpm exec tsc --noEmit` _(gagal di sandbox karena error eksisting pada modul lain — jalankan lokal untuk memverifikasi proyek penuh)._
+- Manual smoke test pada dev server dengan MSW aktif: `/users` dan `/homerooms` memuat data seed dan perubahan wali kelas terlihat instan.
+
+### 📚 Related Documentation
+
+- `docs/checklist.md`
+- `apps/admin/src/pages/users.tsx`, `apps/admin/src/pages/homeroom-assignments.tsx`
+- `apps/admin/src/mocks/handlers.ts`, `apps/admin/src/main.tsx`, `apps/admin/src/components/layout/app-layout.tsx`
+
 ## [2025-10-20] - Kalender Akademik & Absensi Terintegrasi ✅
 
 ### 🎯 Objective

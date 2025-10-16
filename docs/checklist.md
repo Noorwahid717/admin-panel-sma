@@ -9,7 +9,7 @@
 - [ ] Impor siswa (CSV) + validasi unik & laporan error (UI mock ready)
 - [ ] Idempotensi impor siswa
 - [ ] Impor guru (CSV) + validasi (UI mock ready)
-- [ ] CRUD Kelas + assign Wali Kelas (wizard mock ready)
+- [x] CRUD Kelas + assign Wali Kelas (wizard mock ready)
 - [ ] Master Mapel; mapping Mapel ↔ Kelas ↔ Guru (wizard mock ready)
 - [ ] Jadwal manual & generator + konflik (wizard mock ready)
 - [x] Generator jadwal otomatis (drag & drop, fairness, preferensi)

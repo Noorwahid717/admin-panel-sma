@@ -176,8 +176,8 @@ const buildNavItems = (logout: () => void): NavItem[] => [
           </span>
         ),
         icon: <UserOutlined />,
-        resource: "enrollments",
-        path: "/enrollments",
+        resource: "homerooms",
+        path: "/homerooms",
       },
     ],
   },
@@ -231,7 +231,8 @@ const buildNavItems = (logout: () => void): NavItem[] => [
         key: "settings-users",
         label: "Users & Roles",
         icon: <TeamOutlined />,
-        disabled: true,
+        resource: "users",
+        path: "/users",
       },
       {
         key: "settings-configuration",

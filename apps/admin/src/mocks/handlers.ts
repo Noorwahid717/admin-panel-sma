@@ -162,6 +162,7 @@ const findUserByRole = (role: string | null | undefined) => {
 };
 
 const resourceKeys = [
+  "users",
   "students",
   "teachers",
   "classes",
@@ -188,6 +189,7 @@ const resourceKeys = [
 export type ResourceKey = (typeof resourceKeys)[number];
 
 const stores: Record<ResourceKey, Record<string, any>[]> = {
+  users: mockUsers.map((user) => sanitizeUser(user)),
   students,
   teachers,
   classes,
@@ -211,8 +213,68 @@ const stores: Record<ResourceKey, Record<string, any>[]> = {
   dashboard: [principalDashboard],
 };
 
+const USER_ROLE_SET = new Set<MockUserRecord["role"]>([
+  "SUPERADMIN",
+  "ADMIN_TU",
+  "KEPALA_SEKOLAH",
+  "WALI_KELAS",
+  "GURU_MAPEL",
+  "SISWA",
+  "ORTU",
+]);
+
+const normalizeNullableString = (value: unknown): string | null => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+  }
+  const stringified = String(value).trim();
+  return stringified.length === 0 ? null : stringified;
+};
+
+const normalizeUserRole = (value: unknown): MockUserRecord["role"] => {
+  if (typeof value !== "string") {
+    return "ADMIN_TU";
+  }
+  const upper = value.trim().toUpperCase();
+  if (USER_ROLE_SET.has(upper as MockUserRecord["role"])) {
+    return upper as MockUserRecord["role"];
+  }
+
+  switch (upper) {
+    case "SUPER_ADMIN":
+    case "SUPER-ADMIN":
+      return "SUPERADMIN";
+    case "ADMIN":
+    case "ADMINISTRATOR":
+    case "ADMINISTRASI":
+      return "ADMIN_TU";
+    case "KEPSEK":
+    case "PRINCIPAL":
+      return "KEPALA_SEKOLAH";
+    case "WALI":
+    case "HOMEROOM":
+    case "WALIKELAS":
+      return "WALI_KELAS";
+    case "GURU":
+    case "TEACHER":
+      return "GURU_MAPEL";
+    case "STUDENT":
+      return "SISWA";
+    case "PARENT":
+    case "GUARDIAN":
+    case "WALI_MURID":
+      return "ORTU";
+    default:
+      return "ADMIN_TU";
+  }
+};
+
 const resourcePathRegex =
-  /\/(?:api(?:\/v1)?)?\/?(students|teachers|classes|subjects|terms|enrollments|grade-components|grade-configs|grades|attendance|teacher-preferences|semester-schedule|calendar-events|exam-events|class-subjects|schedules|announcements|behavior-notes|mutations|archives|dashboard)(?:\/([^/?]+))?\/?$/;
+  /\/(?:api(?:\/v1)?)?\/?(users|students|teachers|classes|subjects|terms|enrollments|grade-components|grade-configs|grades|attendance|teacher-preferences|semester-schedule|calendar-events|exam-events|class-subjects|schedules|announcements|behavior-notes|mutations|archives|dashboard)(?:\/([^/?]+))?\/?$/;
 
 const parseResourceRequest = (request: Request) => {
   const url = new URL(request.url);
@@ -265,6 +327,23 @@ const sanitizeDateTime = (value: unknown) => {
 const normalizers: Partial<
   Record<ResourceKey, (data: Record<string, any>) => Record<string, any>>
 > = {
+  users: (data) => {
+    const next = { ...data };
+    next.id = String(next.id ?? "");
+    next.email = typeof next.email === "string" ? next.email.trim().toLowerCase() : "";
+    next.fullName =
+      typeof next.fullName === "string" && next.fullName.trim().length > 0
+        ? next.fullName.trim()
+        : typeof next.name === "string" && next.name.trim().length > 0
+          ? next.name.trim()
+          : next.email;
+    next.role = normalizeUserRole(next.role);
+    next.teacherId = normalizeNullableString(next.teacherId);
+    next.studentId = normalizeNullableString(next.studentId);
+    next.classId = normalizeNullableString(next.classId);
+    delete next.password;
+    return next;
+  },
   students: (data) => {
     const next = { ...data };
     const birthDate = sanitizeDate(next.birthDate);
@@ -625,9 +704,85 @@ const findRecord = (resource: ResourceKey, id: string | null) => {
   return stores[resource].find((item) => String(item.id) === String(id)) ?? null;
 };
 
+const syncMockUserRecord = (payload: Record<string, any>, source: Record<string, any>) => {
+  if (!payload || !payload.id) {
+    return;
+  }
+
+  const userId = String(payload.id);
+  const existingIndex = mockUsers.findIndex((user) => user.id === userId);
+  const existing = existingIndex === -1 ? null : mockUsers[existingIndex];
+
+  const resolvedEmail =
+    typeof payload.email === "string" && payload.email.length > 0
+      ? payload.email
+      : typeof source.email === "string" && source.email.trim().length > 0
+        ? source.email.trim().toLowerCase()
+        : (existing?.email ?? `${userId}@example.test`);
+  const normalizedEmail = resolvedEmail.toLowerCase();
+
+  const resolvedName =
+    typeof payload.fullName === "string" && payload.fullName.length > 0
+      ? payload.fullName
+      : typeof source.fullName === "string" && source.fullName.trim().length > 0
+        ? source.fullName.trim()
+        : (existing?.fullName ?? resolvedEmail);
+  const normalizedName =
+    typeof resolvedName === "string" && resolvedName.trim().length > 0
+      ? resolvedName.trim()
+      : normalizedEmail;
+
+  const resolvedRole = normalizeUserRole(payload.role ?? source.role ?? existing?.role);
+
+  const resolvedPassword =
+    typeof source.password === "string" && source.password.trim().length > 0
+      ? source.password.trim()
+      : (existing?.password ?? DEFAULT_PASSWORD);
+
+  const updated: MockUserRecord = {
+    id: userId,
+    email: normalizedEmail,
+    fullName: normalizedName,
+    role: resolvedRole,
+    password: resolvedPassword,
+    teacherId: normalizeNullableString(
+      payload.teacherId ?? source.teacherId ?? existing?.teacherId
+    ),
+    studentId: normalizeNullableString(
+      payload.studentId ?? source.studentId ?? existing?.studentId
+    ),
+    classId: normalizeNullableString(payload.classId ?? source.classId ?? existing?.classId),
+  };
+
+  if (existingIndex === -1) {
+    mockUsers.unshift(updated);
+  } else {
+    mockUsers[existingIndex] = updated;
+  }
+
+  if (currentUser?.id === updated.id) {
+    currentUser = sanitizeUser(updated);
+  }
+};
+
+const removeMockUserRecord = (id: string) => {
+  const index = mockUsers.findIndex((user) => user.id === id);
+  if (index === -1) {
+    return;
+  }
+  const [removed] = mockUsers.splice(index, 1);
+  if (currentUser?.id === removed.id) {
+    const fallback = mockUsers[0] ?? removed;
+    currentUser = sanitizeUser(fallback);
+  }
+};
+
 const createRecord = (resource: ResourceKey, body: Record<string, any>) => {
   const payload = sanitizePayload(resource, { id: body.id ?? generateId(resource), ...body });
   stores[resource].unshift(payload);
+  if (resource === "users") {
+    syncMockUserRecord(payload, body ?? {});
+  }
   return clone(payload);
 };
 
@@ -640,6 +795,9 @@ const updateRecord = (resource: ResourceKey, id: string, body: Record<string, an
   const merged = { ...store[index], ...body, id: store[index].id };
   const payload = sanitizePayload(resource, merged);
   store[index] = payload;
+  if (resource === "users") {
+    syncMockUserRecord(payload, body ?? {});
+  }
   return clone(payload);
 };
 
@@ -650,6 +808,9 @@ const deleteRecord = (resource: ResourceKey, id: string) => {
     return null;
   }
   const [removed] = store.splice(index, 1);
+  if (resource === "users") {
+    removeMockUserRecord(String(id));
+  }
   return clone(removed);
 };
 
@@ -665,7 +826,7 @@ export const mswTestUtils = {
     return deleteRecord(resource, id);
   },
   listUsers() {
-    return mockUsers.map((user) => sanitizeUser(user));
+    return clone(stores.users);
   },
   getCurrentUser() {
     return clone(currentUser);

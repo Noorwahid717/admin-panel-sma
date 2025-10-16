@@ -50,6 +50,7 @@ import {
   ScheduleOutlined,
   SolutionOutlined,
   TeamOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { GradeConfigPage } from "./pages/grade-config";
 import { DashboardPage } from "./pages/dashboard";
@@ -70,6 +71,8 @@ import { SchedulesPage } from "./pages/schedules";
 import { ScheduleGeneratorPage } from "./pages/schedule-generator";
 import { TeacherPreferencesPage } from "./pages/teacher-preferences";
 import { CalendarPage } from "./pages/calendar";
+import { UsersPage } from "./pages/users";
+import { HomeroomAssignmentsPage } from "./pages/homeroom-assignments";
 
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
@@ -198,6 +201,18 @@ const resources = [
     },
   },
   {
+    name: "homerooms",
+    list: "/homerooms",
+    meta: {
+      label: "Wali Kelas",
+      canCreate: false,
+      canEdit: true,
+      canDelete: false,
+      canShow: false,
+      icon: <UserOutlined />,
+    },
+  },
+  {
     name: "schedules",
     list: "/schedules",
     create: "/schedules/create",
@@ -304,6 +319,18 @@ const resources = [
       icon: <ScheduleOutlined />,
     },
   },
+  {
+    name: "users",
+    list: "/users",
+    meta: {
+      label: "Users & Roles",
+      canCreate: false,
+      canEdit: true,
+      canDelete: true,
+      canShow: true,
+      icon: <TeamOutlined />,
+    },
+  },
 ] as const;
 
 const resourceRouteConfig: Record<
@@ -356,6 +383,8 @@ const resourceRouteConfig: Record<
     create: <AttendanceCreate />,
     edit: <AttendanceEdit />,
   },
+  homerooms: {},
+  users: {},
 };
 
 const dataProvider = resolveDataProvider();
@@ -447,6 +476,10 @@ async function bootstrap() {
                           element={
                             resource.name === "dashboard" ? (
                               <DashboardPage />
+                            ) : resource.name === "users" ? (
+                              <UsersPage />
+                            ) : resource.name === "homerooms" ? (
+                              <HomeroomAssignmentsPage />
                             ) : resource.name === "grade-configs" ? (
                               <GradeConfigPage />
                             ) : resource.name === "announcements" ? (
