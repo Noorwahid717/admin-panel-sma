@@ -25,6 +25,7 @@ menyatu dengan jadwal MSW sehingga guru dapat menandai kehadiran dalam hitungan 
    ekspor CSV, dan highlight Top 3 siswa paling disiplin.
 8. Merilis Generator Jadwal Otomatis dengan drag-and-drop, highlight preferensi guru,
    dan panel fairness distribusi.
+9. Menyediakan halaman Preferensi Mengajar agar guru/admin dapat mengatur hari & jam preferensi.
 
 ### 🔍 Verification
 

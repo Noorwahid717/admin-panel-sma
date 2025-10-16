@@ -13,6 +13,7 @@
 - [ ] Master Mapel; mapping Mapel ↔ Kelas ↔ Guru (wizard mock ready)
 - [ ] Jadwal manual & generator + konflik (wizard mock ready)
 - [x] Generator jadwal otomatis (drag & drop, fairness, preferensi)
+- [x] UI preferensi mengajar guru
 - [x] Kalender akademik (filter term, integrasi MSW)
 - [ ] Akun & kredensial: pembuatan user + notifikasi
 - [x] UI wizard setup pra-semester (upload CSV; pratinjau)

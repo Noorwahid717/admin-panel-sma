@@ -783,6 +783,32 @@ export const mswTestUtils = {
     }
     return slots.filter((slot) => slot.classId === classId);
   },
+  upsertTeacherPreference(teacherId: string, payload: Partial<TeacherPreferenceRecord>) {
+    const prefIndex = teacherPreferences.findIndex((pref) => pref.teacherId === teacherId);
+    const now = new Date().toISOString();
+    const base = {
+      preferredDays: [1, 2, 3, 4, 5],
+      blockedDays: [],
+      preferredSlots: [1, 2, 3, 4],
+      maxDailySessions: 3,
+      availabilityLevel: "HIGH" as const,
+      notes: "",
+    };
+    const updated = {
+      id: prefIndex === -1 ? `pref_${teacherId}_${now}` : teacherPreferences[prefIndex].id,
+      teacherId,
+      ...base,
+      ...(payload ?? {}),
+    } satisfies TeacherPreferenceRecord;
+
+    if (prefIndex === -1) {
+      teacherPreferences.push(updated);
+    } else {
+      teacherPreferences[prefIndex] = updated;
+    }
+    stores["teacher-preferences"] = teacherPreferences;
+    return clone(updated);
+  },
 };
 
 // Simulation flags (toggle via query param or by editing these vars during dev)

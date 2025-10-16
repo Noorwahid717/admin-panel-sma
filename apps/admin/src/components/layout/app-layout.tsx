@@ -104,6 +104,12 @@ const buildNavItems = (logout: () => void): NavItem[] => [
         path: "/schedules/generator",
       },
       {
+        key: "akademik-teacher-preferences",
+        label: "Preferensi Guru",
+        icon: <SettingOutlined />,
+        path: "/schedules/preferences",
+      },
+      {
         key: "akademik-subjects",
         label: "Mapel",
         icon: <BookOutlined />,

@@ -68,6 +68,7 @@ import { ClassesPage } from "./pages/classes";
 import { ClassesShow } from "./pages/classes-show";
 import { SchedulesPage } from "./pages/schedules";
 import { ScheduleGeneratorPage } from "./pages/schedule-generator";
+import { TeacherPreferencesPage } from "./pages/teacher-preferences";
 import { CalendarPage } from "./pages/calendar";
 
 import "@refinedev/antd/dist/reset.css";
@@ -489,6 +490,7 @@ async function bootstrap() {
                         ) : resource.name === "schedules" ? (
                           <>
                             <Route path="generator" element={<ScheduleGeneratorPage />} />
+                            <Route path="preferences" element={<TeacherPreferencesPage />} />
                           </>
                         ) : null}
                       </Route>

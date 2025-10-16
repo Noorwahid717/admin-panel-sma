@@ -356,6 +356,16 @@ describe("MSW Fixtures", () => {
       expect(slot.slot).toBeGreaterThanOrEqual(1);
       expect(slot.slot).toBeLessThanOrEqual(8);
     });
+
+    const updated = mswTestUtils.upsertTeacherPreference(String(preferences[0].teacherId), {
+      preferredDays: [1, 3, 5],
+      preferredSlots: [2, 4, 6],
+    });
+    expect(updated.preferredDays).toEqual([1, 3, 5]);
+    const reloaded = mswTestUtils
+      .list("teacher-preferences")
+      .find((item) => item.id === updated.id);
+    expect(reloaded?.preferredSlots).toEqual([2, 4, 6]);
   });
 
   it("Tersedia akun MSW untuk setiap peran utama", () => {
