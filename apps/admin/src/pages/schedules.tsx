@@ -1,5 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Card, Input, Modal, Select, Space, Table, Tag, Tooltip, Typography } from "antd";
+import {
+  Button,
+  Card,
+  Empty,
+  Input,
+  Modal,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   CalendarOutlined,
@@ -19,6 +31,15 @@ import {
 } from "@refinedev/core";
 import dayjs from "dayjs";
 import { ResourceActionGuard } from "../components/resource-action-guard";
+
+const WEEK_DAYS = [
+  { value: 1, label: "Senin" },
+  { value: 2, label: "Selasa" },
+  { value: 3, label: "Rabu" },
+  { value: 4, label: "Kamis" },
+  { value: 5, label: "Jumat" },
+  { value: 6, label: "Sabtu" },
+];
 
 const DAY_OPTIONS = [
   { value: "1", label: "Senin" },
@@ -150,11 +171,18 @@ export const SchedulesPage: React.FC = () => {
     pagination: { current: 1, pageSize: 200 },
   });
 
+  const { data: allSchedulesResponse } = useList<ScheduleResource>({
+    resource: "schedules",
+    pagination: { current: 1, pageSize: 1000 },
+  });
+
   const classSubjects = (classSubjectResponse?.data ?? []) as ClassSubjectResource[];
   const classes = (classesResponse?.data ?? []) as ClassResource[];
   const subjects = (subjectsResponse?.data ?? []) as SubjectResource[];
   const teachers = (teachersResponse?.data ?? []) as TeacherResource[];
   const terms = (termsResponse?.data ?? []) as TermResource[];
+  const schedules = (tableProps.dataSource ?? []) as ScheduleResource[];
+  const allSchedules = (allSchedulesResponse?.data ?? []) as ScheduleResource[];
 
   useEffect(() => {
     if (selectedYear || selectedSemester) return;
@@ -236,6 +264,55 @@ export const SchedulesPage: React.FC = () => {
       })
       .map((mapping) => mapping.id);
   }, [classSubjects, selectedClass, selectedTeacher, matchingTermIds]);
+
+  const weeklyGrid = useMemo(() => {
+    if (!selectedClass) return null;
+    const classMappings = classSubjects.filter((mapping) => mapping.classroomId === selectedClass);
+    if (classMappings.length === 0) return null;
+    const mappingSet = new Set(classMappings.map((mapping) => mapping.id));
+    const classSchedules = allSchedules.filter((entry) => mappingSet.has(entry.classSubjectId));
+    if (classSchedules.length === 0) return null;
+
+    const mappingById = new Map(classMappings.map((mapping) => [mapping.id, mapping]));
+    const slotMap = new Map<string, { teacherName: string; subjectName: string; room?: string }>();
+
+    classSchedules.forEach((entry) => {
+      const slotNumber = Number(resolvePeriodLabel(entry.startTime) ?? 0);
+      if (!slotNumber) return;
+      const mapping = mappingById.get(entry.classSubjectId);
+      if (!mapping) return;
+      const teacher = teachers.find((teacher) => teacher.id === mapping.teacherId);
+      const subject = subjects.find((subject) => subject.id === mapping.subjectId);
+      const key = `${entry.dayOfWeek}-${slotNumber}`;
+      slotMap.set(key, {
+        teacherName: teacher?.fullName ?? "Guru",
+        subjectName: subject?.name ?? "Mapel",
+        room: entry.room,
+      });
+    });
+
+    const rows = SLOT_START_TIMES.map((start, index) => {
+      const slotNumber = index + 1;
+      const fallbackEnd = dayjs(start, "HH:mm").add(45, "minute").format("HH:mm");
+      const referenceEntry = classSchedules.find(
+        (entry) => Number(resolvePeriodLabel(entry.startTime) ?? 0) === slotNumber
+      );
+      const timeLabel = referenceEntry
+        ? `${referenceEntry.startTime.slice(0, 5)} - ${referenceEntry.endTime.slice(0, 5)}`
+        : `${start} - ${fallbackEnd}`;
+      const cells = WEEK_DAYS.map((day) => {
+        const record = slotMap.get(`${day.value}-${slotNumber}`);
+        return record ?? null;
+      });
+      return {
+        slotNumber,
+        timeLabel,
+        cells,
+      };
+    });
+
+    return rows;
+  }, [allSchedules, classSubjects, selectedClass, subjects, teachers]);
 
   useEffect(() => {
     const nextFilters: CrudFilter[] = [];
@@ -512,28 +589,6 @@ export const SchedulesPage: React.FC = () => {
     [deletingId, edit, handleDelete, handleDuplicate, isDuplicating]
   );
 
-  const groupedByDay = useMemo(() => {
-    const groups = new Map<number, EnrichedSchedule[]>();
-    displayedData.forEach((entry) => {
-      const current = groups.get(entry.dayOfWeek) ?? [];
-      current.push(entry);
-      groups.set(entry.dayOfWeek, current);
-    });
-    DAY_OPTIONS.forEach((option) => {
-      const key = Number(option.value);
-      if (groups.has(key)) {
-        groups.set(
-          key,
-          groups
-            .get(key)!
-            .slice()
-            .sort((a, b) => dayjs(a.startTime, "HH:mm").diff(dayjs(b.startTime, "HH:mm")))
-        );
-      }
-    });
-    return groups;
-  }, [displayedData]);
-
   const isLoading =
     tableProps.loading ||
     loadingClassSubjects ||
@@ -651,57 +706,106 @@ export const SchedulesPage: React.FC = () => {
             />
           </Card>
 
-          <Card title="Tampilan Mingguan">
-            <Space
-              align="start"
-              style={{
-                width: "100%",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: 16,
-              }}
-            >
-              {DAY_OPTIONS.map((day) => {
-                const dayValue = Number(day.value);
-                const schedules = groupedByDay.get(dayValue) ?? [];
-
-                return (
-                  <Card
-                    key={day.value}
-                    size="small"
-                    title={
-                      <Space>
-                        <CalendarOutlined />
-                        <span>{day.label}</span>
-                      </Space>
-                    }
-                    style={{ flex: "1 1 240px" }}
-                  >
-                    <Space direction="vertical" style={{ width: "100%" }}>
-                      {schedules.length === 0 ? (
-                        <Typography.Text type="secondary">Tidak ada jadwal.</Typography.Text>
-                      ) : (
-                        schedules.map((item) => (
-                          <Card key={item.id} size="small" bordered>
-                            <Space direction="vertical" size={4} style={{ width: "100%" }}>
-                              <Typography.Text strong>
-                                {item.subjectName ?? "Mapel"} · {item.className ?? "-"}
-                              </Typography.Text>
-                              <Typography.Text type="secondary">
-                                {item.startTime} - {item.endTime} · {item.teacherName ?? "-"}
-                              </Typography.Text>
-                              <Typography.Text type="secondary">
-                                Ruang {item.room ?? "-"}
+          <Card
+            title={
+              <Space>
+                <CalendarOutlined />
+                <span>
+                  Jadwal Mingguan
+                  {selectedClass ? ` · ${classMap.get(selectedClass)?.name ?? ""}` : ""}
+                </span>
+              </Space>
+            }
+          >
+            {selectedClass ? (
+              weeklyGrid && weeklyGrid.length > 0 ? (
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th
+                          style={{
+                            width: 140,
+                            padding: 12,
+                            textAlign: "left",
+                            borderBottom: "1px solid #e2e8f0",
+                            background: "#f8fafc",
+                          }}
+                        >
+                          Jam
+                        </th>
+                        {WEEK_DAYS.map((day) => (
+                          <th
+                            key={day.value}
+                            style={{
+                              padding: 12,
+                              textAlign: "center",
+                              borderBottom: "1px solid #e2e8f0",
+                              background: "#f8fafc",
+                            }}
+                          >
+                            {day.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {weeklyGrid.map((row) => (
+                        <tr key={row.slotNumber}>
+                          <td
+                            style={{
+                              padding: 12,
+                              borderBottom: "1px solid #f1f5f9",
+                              fontWeight: 600,
+                            }}
+                          >
+                            <Space direction="vertical" size={2}>
+                              <span>Jam {row.slotNumber}</span>
+                              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                                {row.timeLabel}
                               </Typography.Text>
                             </Space>
-                          </Card>
-                        ))
-                      )}
-                    </Space>
-                  </Card>
-                );
-              })}
-            </Space>
+                          </td>
+                          {row.cells.map((cell, index) => (
+                            <td
+                              key={`${row.slotNumber}-${index}`}
+                              style={{
+                                padding: 12,
+                                minWidth: 160,
+                                borderBottom: "1px solid #f1f5f9",
+                                borderLeft: "1px solid #f8fafc",
+                              }}
+                            >
+                              {cell ? (
+                                <Space direction="vertical" size={4} style={{ width: "100%" }}>
+                                  <Typography.Text strong>{cell.subjectName}</Typography.Text>
+                                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                                    {cell.teacherName}
+                                  </Typography.Text>
+                                  {cell.room ? (
+                                    <Tag color="blue" style={{ width: "fit-content" }}>
+                                      {cell.room}
+                                    </Tag>
+                                  ) : null}
+                                </Space>
+                              ) : (
+                                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                                  Kosong
+                                </Typography.Text>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <Empty description="Belum ada jadwal untuk kelas ini" />
+              )
+            ) : (
+              <Empty description="Pilih kelas untuk melihat jadwal mingguan" />
+            )}
           </Card>
         </Space>
       </List>
