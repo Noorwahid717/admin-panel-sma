@@ -606,20 +606,6 @@ export const AppLayout: React.FC = () => {
         </Stack>
 
         <Stack direction="row" spacing={2} alignItems="center">
-          <Tooltip title={sidebarCollapsed ? "Perluas sidebar" : "Minimalkan sidebar"}>
-            <IconButton
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              color="primary"
-              aria-label={sidebarCollapsed ? "Perluas sidebar" : "Minimalkan sidebar"}
-              size="small"
-            >
-              {sidebarCollapsed ? (
-                <ChevronRight size={18} aria-label="Perluas sidebar" />
-              ) : (
-                <ChevronLeft size={18} aria-label="Minimalkan sidebar" />
-              )}
-            </IconButton>
-          </Tooltip>
           <Tooltip title={mode === "dark" ? "Matikan mode gelap" : "Aktifkan mode gelap"}>
             <IconButton
               onClick={toggleMode}
@@ -667,10 +653,42 @@ export const AppLayout: React.FC = () => {
             backgroundColor: theme.palette.mode === "dark" ? "#0b1220" : "#ffffff",
             transition: "width 0.3s ease, padding 0.3s ease",
             overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <Box sx={{ maxHeight: "calc(100vh - 160px)", overflowY: "auto", pr: 1 }}>
+          <Box sx={{ flex: 1, maxHeight: "calc(100vh - 200px)", overflowY: "auto", pr: 1 }}>
             <List disablePadding>{renderNavItems(navItems)}</List>
+            <Box
+              sx={{
+                mt: "auto",
+                pt: 2,
+                borderTop: `1px solid ${alpha(theme.palette.text.secondary, 0.08)}`,
+              }}
+            >
+              <Tooltip title={sidebarCollapsed ? "Perluas sidebar" : "Minimalkan sidebar"}>
+                <IconButton
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  color="primary"
+                  aria-label={sidebarCollapsed ? "Perluas sidebar" : "Minimalkan sidebar"}
+                  size="small"
+                  sx={{
+                    width: "100%",
+                    borderRadius: 2,
+                    py: 1,
+                    "&:hover": {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    },
+                  }}
+                >
+                  {sidebarCollapsed ? (
+                    <ChevronRight size={18} aria-label="Perluas sidebar" />
+                  ) : (
+                    <ChevronLeft size={18} aria-label="Minimalkan sidebar" />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Box>
         </Box>
 
