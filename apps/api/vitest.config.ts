@@ -11,7 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@api": resolve(__dirname, "src"),
-      "@shared": resolve(__dirname, "../shared/dist"),
+      "@shared": resolve(__dirname, "../shared/src"),
     },
   },
   test: {

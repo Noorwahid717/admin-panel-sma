@@ -1,12 +1,9 @@
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { and, between, eq, gte, lte, sql } from "drizzle-orm";
 import {
-  attendanceQuerySchema,
-  bulkAttendanceSchema,
-  createAttendanceRecordSchema,
-  AttendanceQueryInput,
-  BulkAttendanceInput,
-  CreateAttendanceRecordInput,
+  type AttendanceQueryInput,
+  type BulkAttendanceInput,
+  type CreateAttendanceRecordInput,
 } from "@shared/schemas";
 import type { Database } from "@shared/db/client";
 import { attendance, classes, enrollments, students, subjects, terms } from "@shared/db/schema";
