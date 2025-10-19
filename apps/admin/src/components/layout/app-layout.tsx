@@ -332,7 +332,17 @@ const NavListItem: React.FC<{
   onClick: () => void;
   hasChildren?: boolean;
   isOpen?: boolean;
-}> = ({ item, isActive, isAncestor, depth, onClick, hasChildren = false, isOpen = false }) => {
+  sidebarCollapsed?: boolean;
+}> = ({
+  item,
+  isActive,
+  isAncestor,
+  depth,
+  onClick,
+  hasChildren = false,
+  isOpen = false,
+  sidebarCollapsed = false,
+}) => {
   const theme = useTheme();
   const background = isActive
     ? alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.22 : 0.12)
@@ -384,20 +394,22 @@ const NavListItem: React.FC<{
         >
           {item.icon}
         </ListItemIcon>
-        <ListItemText
-          primary={
-            <Typography
-              component="span"
-              sx={{
-                fontWeight: isActive ? 700 : 500,
-                fontSize: depth > 0 ? 14 : 15,
-                color: textColor,
-              }}
-            >
-              {item.label}
-            </Typography>
-          }
-        />
+        {!sidebarCollapsed && (
+          <ListItemText
+            primary={
+              <Typography
+                component="span"
+                sx={{
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: depth > 0 ? 14 : 15,
+                  color: textColor,
+                }}
+              >
+                {item.label}
+              </Typography>
+            }
+          />
+        )}
         {hasChildren ? (
           <Box
             component="span"
@@ -495,6 +507,7 @@ export const AppLayout: React.FC = () => {
             depth={depth}
             onClick={() => handleNavigate(item)}
             hasChildren={false}
+            sidebarCollapsed={sidebarCollapsed}
           />
         );
       }
@@ -517,6 +530,7 @@ export const AppLayout: React.FC = () => {
                   : [...prev, item.key]
               )
             }
+            sidebarCollapsed={sidebarCollapsed}
           />
           <Collapse in={isOpen} timeout="auto" unmountOnExit>
             <Box sx={{ pl: 1.5 }}>{renderNavItems(item.children ?? [], depth + 1)}</Box>
@@ -646,7 +660,7 @@ export const AppLayout: React.FC = () => {
         <Box
           component="aside"
           sx={{
-            width: sidebarCollapsed ? 200 : 292,
+            width: sidebarCollapsed ? 100 : 292,
             px: sidebarCollapsed ? 1 : 3,
             py: 4,
             borderRight: `1px solid ${alpha(theme.palette.text.secondary, 0.12)}`,
