@@ -81,7 +81,7 @@ menyediakan dokumentasi resmi bagi tim.
 3. Menyegarkan `mswTestUtils` dan skenario Vitest agar tidak bergantung pada ID hard-coded.
 4. Menulis ulang `docs/MSW-with-seed-data.md` serta menandai checklist
    `Dokumentasi MSW + seed data (frontend dev)` sebagai selesai.
-5. Menambahkan flag `VITE_ENABLE_MSW` (aktif di Vercel preview) sehingga staging dapat memakai MSW
+5. Menambahkan flag `VITE_USE_MSW` (`VITE_ENABLE_MSW` tetap didukung) sehingga staging dapat memakai MSW
    tanpa backend.
 
 ### 🔍 Verification

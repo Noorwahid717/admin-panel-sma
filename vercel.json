@@ -5,7 +5,8 @@
   "installCommand": "pnpm install",
   "preview": {
     "env": {
-      "VITE_ENABLE_MSW": "true"
+      "VITE_ENABLE_MSW": "true",
+      "VITE_USE_MSW": "true"
     }
   }
 }

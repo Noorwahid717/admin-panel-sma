@@ -1895,14 +1895,23 @@ function createDashboard(
     };
   });
 
+  const generateTrend = (base: number, seed: number) =>
+    Array.from({ length: 6 }, (_, index) => {
+      const wave = Math.sin((index + seed + 1) * 0.85) * 4;
+      const drift = (index - 3) * -0.9;
+      const next = Math.max(55, Math.min(100, base + wave + drift));
+      return Number(next.toFixed(1));
+    });
+
   const alerts = attendanceByClassArray
     .filter((entry) => entry.percentage < 92)
-    .map((entry) => ({
+    .map((entry, index) => ({
       classId: entry.classId,
       className: entry.className,
       indicator: "ABSENCE_SPIKE",
       percentage: entry.percentage,
       week: "2024-W34",
+      trend: generateTrend(entry.percentage, index + entry.classId.length),
     }));
 
   const totalAttendance = Array.from(attendanceByClass.values()).reduce(
