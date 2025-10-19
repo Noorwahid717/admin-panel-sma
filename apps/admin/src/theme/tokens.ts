@@ -5,8 +5,8 @@ export const themeTokens = {
   accentOrange: "#f97316",
   secondaryTextLight: "#6b7280",
   secondaryTextDark: "#94a3b8",
-  cardShadow: "0 18px 32px rgba(15, 23, 42, 0.08)",
-  cardBorderRadius: 20,
+  cardShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+  cardBorderRadius: 16,
   focusRing: "0 0 0 3px rgba(47, 111, 237, 0.35)",
 } as const;
 

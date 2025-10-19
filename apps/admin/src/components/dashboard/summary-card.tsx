@@ -34,11 +34,12 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 2.5, sm: 3 },
         height: "100%",
-        borderRadius: 20,
+        borderRadius: 2,
         position: "relative",
-        overflow: "hidden",
+        overflow: "visible",
+        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
       }}
       role="group"
       aria-busy={loading ? "true" : undefined}
@@ -48,7 +49,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
           sx={{
             width: 44,
             height: 44,
-            borderRadius: 14,
+            borderRadius: 1.5,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -60,13 +61,31 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
         </Box>
 
         <Box>
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+          <Typography
+            variant="subtitle2"
+            color="text.secondary"
+            sx={{
+              mb: 0.5,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {title}
           </Typography>
           {loading ? (
             <Skeleton variant="text" width={120} height={36} />
           ) : (
-            <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.3 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                letterSpacing: -0.3,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
               {value}
             </Typography>
           )}
@@ -76,7 +95,18 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
           loading ? (
             <Skeleton variant="text" width={180} />
           ) : (
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                wordBreak: "break-word",
+              }}
+            >
               {subtitle}
             </Typography>
           )

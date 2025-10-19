@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Chip,
+  Collapse,
   Grid,
   LinearProgress,
   Paper,
@@ -23,7 +24,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { useList, useNavigation } from "@refinedev/core";
-import { BarChart3, Users, AlertTriangle } from "lucide-react";
+import { BarChart3, Users, AlertTriangle, ChevronUp, ChevronDown } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line } from "recharts";
 import type { Theme } from "@mui/material/styles";
 
@@ -140,6 +141,8 @@ export const DashboardPage: React.FC = () => {
     () => ({ orderBy: "average", order: "desc" })
   );
 
+  const [isMinimized, setIsMinimized] = React.useState(false);
+
   const sortedClassSummary = React.useMemo(() => {
     if (!classSummaryRaw.length) {
       return [] as ClassSummary[];
@@ -175,415 +178,654 @@ export const DashboardPage: React.FC = () => {
         attendanceAlerts.length === 0));
 
   return (
-    <Stack spacing={4} sx={{ width: "100%" }}>
+    <Stack spacing={4} sx={{ width: "100%", maxWidth: "100%", overflow: "hidden" }}>
       <Box>
-        <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.4 }} gutterBottom>
-          Dashboard Akademik
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Ikhtisar nilai, kehadiran, serta indikator risiko terbaru untuk tindakan cepat.
-        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.4 }} gutterBottom>
+              Dashboard Akademik
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Ikhtisar nilai, kehadiran, serta indikator risiko terbaru untuk tindakan cepat.
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setIsMinimized(!isMinimized)}
+            startIcon={isMinimized ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            sx={{
+              minWidth: "auto",
+              px: 2,
+              borderRadius: 2,
+              textTransform: "none",
+            }}
+            aria-label={isMinimized ? "Perluas dashboard" : "Minimalkan dashboard"}
+          >
+            {isMinimized ? "Perluas" : "Minimalkan"}
+          </Button>
+        </Stack>
       </Box>
 
-      {isError ? (
-        <Alert
-          severity="error"
-          action={
-            <Stack direction="row" spacing={1}>
-              <Button
-                size="small"
-                variant="outlined"
-                color="inherit"
-                onClick={() => dashboardQuery.refetch()}
-                aria-label="Coba lagi memuat dashboard"
-              >
-                Coba lagi
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                onClick={() => push("/grade-configs")}
-                aria-label="Buka halaman pengaturan"
-              >
-                Buka Pengaturan
-              </Button>
-            </Stack>
-          }
-          sx={{ borderRadius: 3 }}
-        >
-          <AlertTitle>Gagal memuat dashboard</AlertTitle>
-          Periksa koneksi atau coba ulang beberapa saat lagi.
-        </Alert>
-      ) : null}
+      <Collapse in={!isMinimized} timeout={300}>
+        {isError ? (
+          <Alert
+            severity="error"
+            action={
+              <Stack direction="row" spacing={1}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="inherit"
+                  onClick={() => dashboardQuery.refetch()}
+                  aria-label="Coba lagi memuat dashboard"
+                >
+                  Coba lagi
+                </Button>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="error"
+                  onClick={() => push("/grade-configs")}
+                  aria-label="Buka halaman pengaturan"
+                >
+                  Buka Pengaturan
+                </Button>
+              </Stack>
+            }
+            sx={{ borderRadius: 3 }}
+          >
+            <AlertTitle>Gagal memuat dashboard</AlertTitle>
+            Periksa koneksi atau coba ulang beberapa saat lagi.
+          </Alert>
+        ) : null}
 
-      <Grid container spacing={3} columns={12}>
-        <Grid item xs={12} md={4}>
-          <SummaryCard
-            title="Rata-rata Nilai"
-            value={dashboard ? dashboard.distribution.overallAverage.toFixed(1) : "0.0"}
-            subtitle={`${(dashboard?.distribution.totalStudents ?? 0).toLocaleString("id-ID")} siswa dipantau`}
-            icon={<BarChart3 aria-label="Ikon nilai" />}
-            accentColor={themeTokens.accentBlue}
-            loading={loading}
-            onCta={() => list("grades")}
-          />
+        <Grid container spacing={{ xs: 2, sm: 3 }} columns={12}>
+          <Grid item xs={12} sm={6} lg={4}>
+            <SummaryCard
+              title="Rata-rata Nilai"
+              value={dashboard ? dashboard.distribution.overallAverage.toFixed(1) : "0.0"}
+              subtitle={`${(dashboard?.distribution.totalStudents ?? 0).toLocaleString("id-ID")} siswa dipantau`}
+              icon={<BarChart3 aria-label="Ikon nilai" />}
+              accentColor={themeTokens.accentBlue}
+              loading={loading}
+              onCta={() => list("grades")}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} lg={4}>
+            <SummaryCard
+              title="Kehadiran Rata-rata"
+              value={dashboard ? percent(dashboard.attendance.overall) : percent(0)}
+              subtitle="Seluruh kelas dan mapel"
+              icon={<Users aria-label="Ikon kehadiran" />}
+              accentColor={themeTokens.accentGreen}
+              loading={loading}
+              onCta={() => list("attendance")}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} lg={4}>
+            <SummaryCard
+              title="Perlu Remedial"
+              value={(dashboard?.remedial?.length ?? 0).toLocaleString("id-ID")}
+              subtitle="Siswa belum mencapai KKM"
+              icon={<AlertTriangle aria-label="Ikon remedial" />}
+              accentColor={themeTokens.accentOrange}
+              loading={loading}
+              onCta={() => list("grades")}
+            />
+          </Grid>
         </Grid>
-        <Grid item xs={12} md={4}>
-          <SummaryCard
-            title="Kehadiran Rata-rata"
-            value={dashboard ? percent(dashboard.attendance.overall) : percent(0)}
-            subtitle="Seluruh kelas dan mapel"
-            icon={<Users aria-label="Ikon kehadiran" />}
-            accentColor={themeTokens.accentGreen}
-            loading={loading}
-            onCta={() => list("attendance")}
-          />
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <SummaryCard
-            title="Perlu Remedial"
-            value={(dashboard?.remedial?.length ?? 0).toLocaleString("id-ID")}
-            subtitle="Siswa belum mencapai KKM"
-            icon={<AlertTriangle aria-label="Ikon remedial" />}
-            accentColor={themeTokens.accentOrange}
-            loading={loading}
-            onCta={() => list("grades")}
-          />
-        </Grid>
-      </Grid>
 
-      {isEmptyState ? <EmptyState /> : null}
+        {isEmptyState ? <EmptyState /> : null}
 
-      <Grid container spacing={3} columns={12}>
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 20 }}>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{ mb: 2 }}
+        <Grid container spacing={{ xs: 2, sm: 3 }} columns={12}>
+          <Grid item xs={12} md={6}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 2.5, sm: 3 },
+                borderRadius: 2,
+                overflow: "visible",
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+              }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Distribusi Nilai
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {totalStudents.toLocaleString("id-ID")} siswa
-              </Typography>
-            </Stack>
-            {loading ? (
-              <TableSkeleton rows={4} columns={2} />
-            ) : distributionByRange.length === 0 ? (
-              <EmptyState message={EMPTY_MESSAGE} />
-            ) : (
-              <TableContainer>
-                <Table size="small" aria-label="Tabel distribusi nilai">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Rentang Nilai</TableCell>
-                      <TableCell>Jumlah Siswa</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {distributionByRange.map((bucket) => (
-                      <TableRow
-                        key={bucket.range}
-                        hover
-                        tabIndex={0}
-                        sx={{
-                          "&:focus-visible": {
-                            outline: `2px solid ${theme.palette.primary.main}`,
-                            outlineOffset: -2,
-                          },
-                        }}
-                      >
-                        <TableCell>{bucket.range}</TableCell>
-                        <TableCell>
-                          <Stack spacing={0.5}>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                              {bucket.count.toLocaleString("id-ID")}
-                            </Typography>
-                            <LinearProgress
-                              variant="determinate"
-                              value={totalStudents === 0 ? 0 : (bucket.count / totalStudents) * 100}
-                              sx={{
-                                height: 6,
-                                borderRadius: 3,
-                                backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                                "& .MuiLinearProgress-bar": {
-                                  backgroundColor: theme.palette.primary.main,
-                                  borderRadius: 3,
-                                },
-                              }}
-                              aria-label={`Distribusi ${bucket.range}`}
-                            />
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 20 }}>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{ mb: 2 }}
-            >
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Kelas vs Nilai
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Urutkan untuk melihat tren
-              </Typography>
-            </Stack>
-            {loading ? (
-              <TableSkeleton rows={5} columns={4} />
-            ) : sortedClassSummary.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <TableContainer sx={{ maxHeight: 420 }}>
-                <Table stickyHeader size="small" aria-label="Tabel kelas dan nilai">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Kelas</TableCell>
-                      {(["average", "highest", "lowest"] as const).map((key) => (
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{ mb: 2 }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Distribusi Nilai
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {totalStudents.toLocaleString("id-ID")} siswa
+                </Typography>
+              </Stack>
+              {loading ? (
+                <TableSkeleton rows={4} columns={2} />
+              ) : distributionByRange.length === 0 ? (
+                <EmptyState message={EMPTY_MESSAGE} />
+              ) : (
+                <TableContainer sx={{ overflowX: "auto" }}>
+                  <Table size="small" aria-label="Tabel distribusi nilai" sx={{ minWidth: 400 }}>
+                    <TableHead>
+                      <TableRow>
                         <TableCell
-                          key={key}
-                          sortDirection={sortConfig.orderBy === key ? sortConfig.order : false}
+                          sx={{
+                            position: "sticky",
+                            top: 0,
+                            bgcolor: "background.paper",
+                            zIndex: 1,
+                          }}
                         >
-                          <TableSortLabel
-                            active={sortConfig.orderBy === key}
-                            direction={sortConfig.orderBy === key ? sortConfig.order : "asc"}
-                            onClick={handleSort(key)}
-                          >
-                            {key === "average"
-                              ? "Rata-rata"
-                              : key === "highest"
-                                ? "Tertinggi"
-                                : "Terendah"}
-                          </TableSortLabel>
+                          Rentang Nilai
                         </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {sortedClassSummary.map((row) => (
-                      <TableRow
-                        key={row.classId}
-                        hover
-                        tabIndex={0}
-                        sx={{
-                          transition: "background-color 0.2s ease",
-                          cursor: "pointer",
-                          "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
-                          "&:focus-visible": {
-                            outline: `2px solid ${theme.palette.primary.main}`,
-                            outlineOffset: -2,
-                          },
-                        }}
-                      >
-                        <TableCell sx={{ fontWeight: 600 }}>{row.className}</TableCell>
-                        <TableCell>
-                          <Typography
-                            sx={{ fontWeight: 600, color: scoreColor(row.average, theme.palette) }}
-                          >
-                            {row.average.toFixed(1)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography
-                            sx={{ fontWeight: 500, color: scoreColor(row.highest, theme.palette) }}
-                          >
-                            {row.highest.toFixed(0)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography
-                            sx={{ fontWeight: 500, color: scoreColor(row.lowest, theme.palette) }}
-                          >
-                            {row.lowest.toFixed(0)}
-                          </Typography>
+                        <TableCell
+                          sx={{
+                            position: "sticky",
+                            top: 0,
+                            bgcolor: "background.paper",
+                            zIndex: 1,
+                          }}
+                        >
+                          Jumlah Siswa
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </Paper>
-        </Grid>
-      </Grid>
+                    </TableHead>
+                    <TableBody>
+                      {distributionByRange.map((bucket) => (
+                        <TableRow
+                          key={bucket.range}
+                          hover
+                          tabIndex={0}
+                          sx={{
+                            "&:focus-visible": {
+                              outline: `2px solid ${theme.palette.primary.main}`,
+                              outlineOffset: -2,
+                            },
+                          }}
+                        >
+                          <TableCell sx={{ whiteSpace: "nowrap" }}>{bucket.range}</TableCell>
+                          <TableCell sx={{ minWidth: 120 }}>
+                            <Stack spacing={0.5}>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {bucket.count.toLocaleString("id-ID")}
+                              </Typography>
+                              <LinearProgress
+                                variant="determinate"
+                                value={
+                                  totalStudents === 0 ? 0 : (bucket.count / totalStudents) * 100
+                                }
+                                sx={{
+                                  height: 6,
+                                  borderRadius: 3,
+                                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                                  "& .MuiLinearProgress-bar": {
+                                    backgroundColor: theme.palette.primary.main,
+                                    borderRadius: 3,
+                                  },
+                                }}
+                                aria-label={`Distribusi ${bucket.range}`}
+                              />
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Paper>
+          </Grid>
 
-      <Paper elevation={0} sx={{ p: 3, borderRadius: 20 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Ringkasan Kehadiran Kelas
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {dashboard ? percent(dashboard.attendance.overall) : percent(0)} rata-rata sekolah
-          </Typography>
-        </Stack>
-        {loading ? (
-          <TableSkeleton rows={5} columns={3} />
-        ) : attendanceByClass.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <TableContainer>
-            <Table size="small" aria-label="Ringkasan kehadiran kelas">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Kelas</TableCell>
-                  <TableCell>Persentase</TableCell>
-                  <TableCell>Status</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {attendanceByClass.map((row) => (
-                  <TableRow
-                    key={row.classId}
-                    hover
-                    tabIndex={0}
-                    sx={{
-                      "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
-                      "&:focus-visible": {
-                        outline: `2px solid ${theme.palette.primary.main}`,
-                        outlineOffset: -2,
-                      },
-                    }}
+          <Grid item xs={12} md={6}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 2.5, sm: 3 },
+                borderRadius: 2,
+                overflow: "visible",
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+              }}
+            >
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{ mb: 2 }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Kelas vs Nilai
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Urutkan untuk melihat tren
+                </Typography>
+              </Stack>
+              {loading ? (
+                <TableSkeleton rows={5} columns={4} />
+              ) : sortedClassSummary.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <TableContainer sx={{ maxHeight: 420, overflowX: "auto", overflowY: "auto" }}>
+                  <Table
+                    stickyHeader
+                    size="small"
+                    aria-label="Tabel kelas dan nilai"
+                    sx={{ minWidth: 500 }}
                   >
-                    <TableCell sx={{ fontWeight: 600 }}>{row.className}</TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontWeight: 600 }}>{percent(row.percentage)}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        label={
-                          row.percentage >= 95
-                            ? "Stabil"
-                            : row.percentage >= 90
-                              ? "Perlu pantau"
-                              : "Perlu tindakan"
-                        }
-                        color={
-                          row.percentage >= 95
-                            ? "success"
-                            : row.percentage >= 90
-                              ? "warning"
-                              : "error"
-                        }
-                        variant={row.percentage >= 95 ? "outlined" : "filled"}
-                        aria-label={`Status kehadiran ${row.className}`}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
-
-      <Paper elevation={0} sx={{ p: 3, borderRadius: 20 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            Alert Kehadiran
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Terakhir diperbarui:{" "}
-            {dashboard?.updatedAt ? new Date(dashboard.updatedAt).toLocaleString("id-ID") : "-"}
-          </Typography>
-        </Stack>
-        {loading ? (
-          <TableSkeleton rows={4} columns={4} />
-        ) : attendanceAlerts.length === 0 ? (
-          <EmptyState message="Tidak ada lonjakan ketidakhadiran minggu ini." />
-        ) : (
-          <TableContainer>
-            <Table size="small" aria-label="Daftar alert kehadiran">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Kelas</TableCell>
-                  <TableCell>Indikator</TableCell>
-                  <TableCell>Kehadiran</TableCell>
-                  <TableCell>Pekan</TableCell>
-                  <TableCell>Tren</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {attendanceAlerts.map((alert) => (
-                  <TableRow
-                    key={`${alert.classId}-${alert.week}`}
-                    hover
-                    tabIndex={0}
-                    sx={{
-                      "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
-                      "&:focus-visible": {
-                        outline: `2px solid ${theme.palette.primary.main}`,
-                        outlineOffset: -2,
-                      },
-                    }}
-                  >
-                    <TableCell sx={{ fontWeight: 600 }}>{alert.className}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label="Lonjakan ketidakhadiran"
-                        color="warning"
-                        variant="filled"
-                        size="small"
-                        aria-label="Lonjakan ketidakhadiran"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontWeight: 600, color: theme.palette.warning.main }}>
-                        {percent(alert.percentage)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Tooltip title={alert.week} placement="top" arrow>
-                        <Typography sx={{ fontWeight: 500 }}>
-                          {formatWeekLabel(alert.week)}
-                        </Typography>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell sx={{ minWidth: 140 }}>
-                      <Box
-                        sx={{ width: "100%", height: 46 }}
-                        aria-label={`Tren kehadiran ${alert.className}`}
-                      >
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={(alert.trend ?? [alert.percentage]).map((value, index) => ({
-                              index,
-                              value,
-                            }))}
+                    <TableHead>
+                      <TableRow>
+                        <TableCell
+                          sx={{
+                            fontWeight: 600,
+                            minWidth: 120,
+                            maxWidth: 200,
+                            position: "sticky",
+                            top: 0,
+                            bgcolor: "background.paper",
+                            zIndex: 2,
+                          }}
+                        >
+                          Kelas
+                        </TableCell>
+                        {(["average", "highest", "lowest"] as const).map((key) => (
+                          <TableCell
+                            key={key}
+                            sortDirection={sortConfig.orderBy === key ? sortConfig.order : false}
+                            sx={{
+                              whiteSpace: "nowrap",
+                              position: "sticky",
+                              top: 0,
+                              bgcolor: "background.paper",
+                              zIndex: 2,
+                            }}
                           >
-                            <Line
-                              type="monotone"
-                              dataKey="value"
-                              stroke={theme.palette.warning.main}
-                              strokeWidth={2}
-                              dot={false}
-                              isAnimationActive={false}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </Box>
+                            <TableSortLabel
+                              active={sortConfig.orderBy === key}
+                              direction={sortConfig.orderBy === key ? sortConfig.order : "asc"}
+                              onClick={handleSort(key)}
+                            >
+                              {key === "average"
+                                ? "Rata-rata"
+                                : key === "highest"
+                                  ? "Tertinggi"
+                                  : "Terendah"}
+                            </TableSortLabel>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {sortedClassSummary.map((row) => (
+                        <TableRow
+                          key={row.classId}
+                          hover
+                          tabIndex={0}
+                          sx={{
+                            transition: "background-color 0.2s ease",
+                            cursor: "pointer",
+                            "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+                            "&:focus-visible": {
+                              outline: `2px solid ${theme.palette.primary.main}`,
+                              outlineOffset: -2,
+                            },
+                          }}
+                        >
+                          <TableCell
+                            sx={{
+                              fontWeight: 600,
+                              maxWidth: 200,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {row.className}
+                          </TableCell>
+                          <TableCell>
+                            <Typography
+                              sx={{
+                                fontWeight: 600,
+                                color: scoreColor(row.average, theme.palette),
+                              }}
+                            >
+                              {row.average.toFixed(1)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography
+                              sx={{
+                                fontWeight: 500,
+                                color: scoreColor(row.highest, theme.palette),
+                              }}
+                            >
+                              {row.highest.toFixed(0)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography
+                              sx={{ fontWeight: 500, color: scoreColor(row.lowest, theme.palette) }}
+                            >
+                              {row.lowest.toFixed(0)}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Paper>
+          </Grid>
+        </Grid>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 2.5, sm: 3 },
+            borderRadius: 2,
+            overflow: "visible",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+          }}
+        >
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Ringkasan Kehadiran Kelas
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {dashboard ? percent(dashboard.attendance.overall) : percent(0)} rata-rata sekolah
+            </Typography>
+          </Stack>
+          {loading ? (
+            <TableSkeleton rows={5} columns={3} />
+          ) : attendanceByClass.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <TableContainer sx={{ overflowX: "auto" }}>
+              <Table size="small" aria-label="Ringkasan kehadiran kelas" sx={{ minWidth: 600 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      sx={{
+                        minWidth: 100,
+                        maxWidth: 180,
+                        position: "sticky",
+                        top: 0,
+                        bgcolor: "background.paper",
+                        zIndex: 1,
+                      }}
+                    >
+                      Kelas
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        whiteSpace: "nowrap",
+                        position: "sticky",
+                        top: 0,
+                        bgcolor: "background.paper",
+                        zIndex: 1,
+                      }}
+                    >
+                      Persentase
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        whiteSpace: "nowrap",
+                        position: "sticky",
+                        top: 0,
+                        bgcolor: "background.paper",
+                        zIndex: 1,
+                      }}
+                    >
+                      Status
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+                </TableHead>
+                <TableBody>
+                  {attendanceByClass.map((row) => (
+                    <TableRow
+                      key={row.classId}
+                      hover
+                      tabIndex={0}
+                      sx={{
+                        "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+                        "&:focus-visible": {
+                          outline: `2px solid ${theme.palette.primary.main}`,
+                          outlineOffset: -2,
+                        },
+                      }}
+                    >
+                      <TableCell
+                        sx={{
+                          fontWeight: 600,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          maxWidth: 180,
+                        }}
+                      >
+                        {row.className}
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 600 }}>{percent(row.percentage)}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={
+                            row.percentage >= 95
+                              ? "Stabil"
+                              : row.percentage >= 90
+                                ? "Perlu pantau"
+                                : "Perlu tindakan"
+                          }
+                          color={
+                            row.percentage >= 95
+                              ? "success"
+                              : row.percentage >= 90
+                                ? "warning"
+                                : "error"
+                          }
+                          variant={row.percentage >= 95 ? "outlined" : "filled"}
+                          aria-label={`Status kehadiran ${row.className}`}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 2.5, sm: 3 },
+            borderRadius: 2,
+            overflow: "visible",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+          }}
+        >
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Alert Kehadiran
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Terakhir diperbarui:{" "}
+              {dashboard?.updatedAt ? new Date(dashboard.updatedAt).toLocaleString("id-ID") : "-"}
+            </Typography>
+          </Stack>
+          {loading ? (
+            <TableSkeleton rows={4} columns={4} />
+          ) : attendanceAlerts.length === 0 ? (
+            <EmptyState message="Tidak ada lonjakan ketidakhadiran minggu ini." />
+          ) : (
+            <TableContainer sx={{ overflowX: "auto" }}>
+              <Table size="small" aria-label="Daftar alert kehadiran" sx={{ minWidth: 800 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      sx={{
+                        minWidth: 100,
+                        maxWidth: 150,
+                        position: "sticky",
+                        top: 0,
+                        bgcolor: "background.paper",
+                        zIndex: 1,
+                      }}
+                    >
+                      Kelas
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        whiteSpace: "nowrap",
+                        position: "sticky",
+                        top: 0,
+                        bgcolor: "background.paper",
+                        zIndex: 1,
+                      }}
+                    >
+                      Indikator
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        whiteSpace: "nowrap",
+                        position: "sticky",
+                        top: 0,
+                        bgcolor: "background.paper",
+                        zIndex: 1,
+                      }}
+                    >
+                      Kehadiran
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        whiteSpace: "nowrap",
+                        position: "sticky",
+                        top: 0,
+                        bgcolor: "background.paper",
+                        zIndex: 1,
+                      }}
+                    >
+                      Pekan
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        minWidth: 140,
+                        position: "sticky",
+                        top: 0,
+                        bgcolor: "background.paper",
+                        zIndex: 1,
+                      }}
+                    >
+                      Tren
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {attendanceAlerts.map((alert) => (
+                    <TableRow
+                      key={`${alert.classId}-${alert.week}`}
+                      hover
+                      tabIndex={0}
+                      sx={{
+                        "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.08) },
+                        "&:focus-visible": {
+                          outline: `2px solid ${theme.palette.primary.main}`,
+                          outlineOffset: -2,
+                        },
+                      }}
+                    >
+                      <TableCell
+                        sx={{
+                          fontWeight: 600,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          maxWidth: 150,
+                        }}
+                      >
+                        {alert.className}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label="Lonjakan ketidakhadiran"
+                          color="warning"
+                          variant="filled"
+                          size="small"
+                          aria-label="Lonjakan ketidakhadiran"
+                          sx={{
+                            maxWidth: 180,
+                            "& .MuiChip-label": {
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            },
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 600, color: theme.palette.warning.main }}>
+                          {percent(alert.percentage)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title={alert.week} placement="top" arrow>
+                          <Typography
+                            sx={{
+                              fontWeight: 500,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: 100,
+                            }}
+                          >
+                            {formatWeekLabel(alert.week)}
+                          </Typography>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell sx={{ minWidth: 140 }}>
+                        <Box
+                          sx={{ width: "100%", height: 46 }}
+                          aria-label={`Tren kehadiran ${alert.className}`}
+                        >
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart
+                              data={(alert.trend ?? [alert.percentage]).map((value, index) => ({
+                                index,
+                                value,
+                              }))}
+                            >
+                              <Line
+                                type="monotone"
+                                dataKey="value"
+                                stroke={theme.palette.warning.main}
+                                strokeWidth={2}
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
+      </Collapse>
     </Stack>
   );
 };

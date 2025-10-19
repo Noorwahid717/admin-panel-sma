@@ -48,6 +48,8 @@ import {
   Sun,
   Moon,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useGetIdentity, useList, useLogout, useNavigation } from "@refinedev/core";
@@ -447,6 +449,8 @@ export const AppLayout: React.FC = () => {
 
   const [openGroups, setOpenGroups] = React.useState<string[]>(defaultOpen);
 
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+
   React.useEffect(() => {
     setOpenGroups((prev) => {
       const withActive = new Set(prev);
@@ -588,6 +592,20 @@ export const AppLayout: React.FC = () => {
         </Stack>
 
         <Stack direction="row" spacing={2} alignItems="center">
+          <Tooltip title={sidebarCollapsed ? "Perluas sidebar" : "Minimalkan sidebar"}>
+            <IconButton
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              color="primary"
+              aria-label={sidebarCollapsed ? "Perluas sidebar" : "Minimalkan sidebar"}
+              size="small"
+            >
+              {sidebarCollapsed ? (
+                <ChevronRight size={18} aria-label="Perluas sidebar" />
+              ) : (
+                <ChevronLeft size={18} aria-label="Minimalkan sidebar" />
+              )}
+            </IconButton>
+          </Tooltip>
           <Tooltip title={mode === "dark" ? "Matikan mode gelap" : "Aktifkan mode gelap"}>
             <IconButton
               onClick={toggleMode}
@@ -628,11 +646,13 @@ export const AppLayout: React.FC = () => {
         <Box
           component="aside"
           sx={{
-            width: 292,
-            px: 3,
+            width: sidebarCollapsed ? 200 : 292,
+            px: sidebarCollapsed ? 1 : 3,
             py: 4,
             borderRight: `1px solid ${alpha(theme.palette.text.secondary, 0.12)}`,
             backgroundColor: theme.palette.mode === "dark" ? "#0b1220" : "#ffffff",
+            transition: "width 0.3s ease, padding 0.3s ease",
+            overflow: "hidden",
           }}
         >
           <Box sx={{ maxHeight: "calc(100vh - 160px)", overflowY: "auto", pr: 1 }}>
@@ -647,16 +667,24 @@ export const AppLayout: React.FC = () => {
             display: "flex",
             justifyContent: "center",
             backgroundColor: theme.palette.background.default,
+            overflow: "auto",
           }}
         >
-          <Box sx={{ width: "100%", maxWidth: 1440, px: 5, py: 5 }}>
+          <Box
+            sx={{
+              width: "100%",
+              px: { xs: 1.5, sm: 2, md: 2.5 },
+              py: { xs: 2, md: 3 },
+            }}
+          >
             <Box
               sx={{
                 bgcolor: theme.palette.background.paper,
-                borderRadius: themeTokens.cardBorderRadius,
-                boxShadow: themeTokens.cardShadow,
-                p: { xs: 3, md: 4 },
+                borderRadius: 2,
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+                p: { xs: 2, sm: 3, md: 4 },
                 minHeight: "calc(100vh - 160px)",
+                overflow: "visible",
               }}
             >
               <AppBreadcrumb />

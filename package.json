@@ -6,6 +6,7 @@
   "packageManager": "pnpm@9.7.1",
   "scripts": {
     "dev": "concurrently -n api,worker,admin -c green,magenta,cyan \"pnpm --filter @apps/api dev\" \"pnpm --filter @apps/worker dev\" \"pnpm --filter @apps/admin dev\"",
+    "dev:admin": "pnpm --filter @apps/admin dev",
     "build": "pnpm -r build",
     "lint": "eslint .",
     "test": "pnpm -r test",
