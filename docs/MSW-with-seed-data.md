@@ -13,7 +13,7 @@ dikomit sehingga developer cukup menjalankan `pnpm dev` untuk mendapatkan pengal
   kelas, jadwal, nilai, mutasi, arsip, dan dashboard kepala sekolah.
 - Endpoint daftar mendukung `_page/_perPage`, `_start/_end`, `_sort/_order`, `limit`, dan `filter`
   (termasuk pencarian fuzzy via key `field~`) sehingga UX React Admin terasa natural.
-- Flag `VITE_ENABLE_MSW=true` memungkinkan staging/preview (mis. Vercel) tetap menggunakan seed yang sama
+- Flag `VITE_USE_MSW=true` (atau `VITE_ENABLE_MSW` untuk kompatibilitas lama) memungkinkan staging/preview (mis. Vercel) tetap menggunakan seed yang sama
   tanpa perlu backend aktif.
 - Auth mock mendukung alur login/refresh/logout sekaligus menyediakan multi-role RBAC.
 - Utilitas `mswTestUtils` dan `setSimulation` membantu percobaan manual maupun automated test.
@@ -81,7 +81,7 @@ skenario ekstra (mis. kelas eksperimen, siswa pindahan tambahan).
 
 ## Mode Staging / Preview
 
-- Set environment `VITE_ENABLE_MSW=true` pada build (contoh: `vercel.json` → `preview.env`).
+- Set environment `VITE_USE_MSW=true` pada build (contoh: `vercel.json` → `preview.env`).
 - Saat flag aktif, `dataProvider` dan `authProvider` otomatis mengganti base URL ke origin aplikasi
   (`https://preview.app/api`) sehingga request ditangani MSW walaupun variabel `VITE_API_URL`
   menunjuk ke host lain.

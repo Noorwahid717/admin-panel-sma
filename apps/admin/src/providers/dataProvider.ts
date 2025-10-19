@@ -29,7 +29,7 @@ const sanitizeBaseUrl = (rawUrl?: string) => {
   return "http://localhost:3000/api/v1";
 };
 
-const ENABLE_MSW = import.meta.env.VITE_ENABLE_MSW === "true";
+const ENABLE_MSW = (import.meta.env.VITE_USE_MSW ?? import.meta.env.VITE_ENABLE_MSW) === "true";
 
 const envBaseUrl = sanitizeBaseUrl(import.meta.env.VITE_API_URL);
 

@@ -8,7 +8,6 @@ import routerProvider, {
   UnsavedChangesNotifier,
 } from "@refinedev/react-router-v6";
 import { ErrorComponent, notificationProvider } from "@refinedev/antd";
-import { ConfigProvider, App as AntdApp, theme } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // We'll start MSW in development and await the worker to be ready before
@@ -76,6 +75,8 @@ import { HomeroomAssignmentsPage } from "./pages/homeroom-assignments";
 
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
+
+import { ThemeProvider } from "./theme/theme-provider";
 
 // render app after optional mock bootstrap (below)
 
@@ -388,7 +389,7 @@ const resourceRouteConfig: Record<
 };
 
 const dataProvider = resolveDataProvider();
-const ENABLE_MSW = import.meta.env.VITE_ENABLE_MSW === "true";
+const ENABLE_MSW = (import.meta.env.VITE_USE_MSW ?? import.meta.env.VITE_ENABLE_MSW) === "true";
 const shouldStartMSW = import.meta.env.DEV || ENABLE_MSW;
 
 // Feature flag untuk mematikan layout kustom via env
@@ -431,116 +432,100 @@ async function bootstrap() {
     <React.StrictMode>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <ConfigProvider
-            theme={{
-              algorithm: theme.defaultAlgorithm,
-              token: {
-                colorPrimary: "#1d4ed8",
-                borderRadius: 8,
-              },
-            }}
-          >
-            <AntdApp>
-              <Refine
-                dataProvider={dataProvider}
-                authProvider={authProvider}
-                accessControlProvider={accessControlProvider}
-                notificationProvider={notificationProvider}
-                routerProvider={routerProvider}
-                resources={resources.map(({ name, list, create, edit, show, meta }) => ({
-                  name,
-                  list,
-                  create,
-                  edit,
-                  show,
-                  meta,
-                }))}
-                options={{
-                  syncWithLocation: true,
-                  warnWhenUnsavedChanges: false,
-                }}
-              >
-                <Routes>
-                  <Route
-                    element={
-                      <Authenticated key="authenticated-routes" fallback={<LoginPage />}>
-                        <LayoutWrapper />
-                      </Authenticated>
-                    }
-                  >
-                    <Route index element={<NavigateToResource resource={resources[0].name} />} />
-                    {resources.map((resource) => (
-                      <Route key={resource.name} path={resource.name}>
-                        <Route
-                          index
-                          element={
-                            resource.name === "dashboard" ? (
-                              <DashboardPage />
-                            ) : resource.name === "users" ? (
-                              <UsersPage />
-                            ) : resource.name === "homerooms" ? (
-                              <HomeroomAssignmentsPage />
-                            ) : resource.name === "grade-configs" ? (
-                              <GradeConfigPage />
-                            ) : resource.name === "announcements" ? (
-                              <AnnouncementsPage />
-                            ) : resource.name === "behavior-notes" ? (
-                              <BehaviorNotesPage />
-                            ) : resource.name === "calendar" ? (
-                              <CalendarPage />
-                            ) : resource.name === "attendance" ? (
-                              <AttendanceAnalyticsPage />
-                            ) : resource.name === "schedules" ? (
-                              <SchedulesPage />
-                            ) : resource.name === "classes" ? (
-                              <ClassesPage />
-                            ) : (
-                              <ResourceList />
-                            )
-                          }
-                        />
-                        {resourceRouteConfig[resource.name]?.create ? (
-                          <Route
-                            path="create"
-                            element={resourceRouteConfig[resource.name]!.create}
-                          />
-                        ) : null}
-                        {resourceRouteConfig[resource.name]?.edit ? (
-                          <Route
-                            path="edit/:id"
-                            element={resourceRouteConfig[resource.name]!.edit}
-                          />
-                        ) : null}
-                        <Route
-                          path="show/:id"
-                          element={resource.name === "classes" ? <ClassesShow /> : <ResourceShow />}
-                        />
-                        {resource.name === "attendance" ? (
-                          <>
-                            <Route path="daily" element={<AttendanceDailyPage />} />
-                            <Route path="lesson" element={<AttendanceLessonPage />} />
-                          </>
-                        ) : resource.name === "schedules" ? (
-                          <>
-                            <Route path="generator" element={<ScheduleGeneratorPage />} />
-                            <Route path="preferences" element={<TeacherPreferencesPage />} />
-                          </>
-                        ) : null}
-                      </Route>
-                    ))}
-                    <Route path="setup" element={<SetupWizard />} />
-                    <Route path="setup/import-status" element={<ImportStatusPage />} />
-                  </Route>
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="*" element={<ErrorComponent />} />
-                </Routes>
+          <ThemeProvider>
+            <Refine
+              dataProvider={dataProvider}
+              authProvider={authProvider}
+              accessControlProvider={accessControlProvider}
+              notificationProvider={notificationProvider}
+              routerProvider={routerProvider}
+              resources={resources.map(({ name, list, create, edit, show, meta }) => ({
+                name,
+                list,
+                create,
+                edit,
+                show,
+                meta,
+              }))}
+              options={{
+                syncWithLocation: true,
+                warnWhenUnsavedChanges: false,
+              }}
+            >
+              <Routes>
+                <Route
+                  element={
+                    <Authenticated key="authenticated-routes" fallback={<LoginPage />}>
+                      <LayoutWrapper />
+                    </Authenticated>
+                  }
+                >
+                  <Route index element={<NavigateToResource resource={resources[0].name} />} />
+                  {resources.map((resource) => (
+                    <Route key={resource.name} path={resource.name}>
+                      <Route
+                        index
+                        element={
+                          resource.name === "dashboard" ? (
+                            <DashboardPage />
+                          ) : resource.name === "users" ? (
+                            <UsersPage />
+                          ) : resource.name === "homerooms" ? (
+                            <HomeroomAssignmentsPage />
+                          ) : resource.name === "grade-configs" ? (
+                            <GradeConfigPage />
+                          ) : resource.name === "announcements" ? (
+                            <AnnouncementsPage />
+                          ) : resource.name === "behavior-notes" ? (
+                            <BehaviorNotesPage />
+                          ) : resource.name === "calendar" ? (
+                            <CalendarPage />
+                          ) : resource.name === "attendance" ? (
+                            <AttendanceAnalyticsPage />
+                          ) : resource.name === "schedules" ? (
+                            <SchedulesPage />
+                          ) : resource.name === "classes" ? (
+                            <ClassesPage />
+                          ) : (
+                            <ResourceList />
+                          )
+                        }
+                      />
+                      {resourceRouteConfig[resource.name]?.create ? (
+                        <Route path="create" element={resourceRouteConfig[resource.name]!.create} />
+                      ) : null}
+                      {resourceRouteConfig[resource.name]?.edit ? (
+                        <Route path="edit/:id" element={resourceRouteConfig[resource.name]!.edit} />
+                      ) : null}
+                      <Route
+                        path="show/:id"
+                        element={resource.name === "classes" ? <ClassesShow /> : <ResourceShow />}
+                      />
+                      {resource.name === "attendance" ? (
+                        <>
+                          <Route path="daily" element={<AttendanceDailyPage />} />
+                          <Route path="lesson" element={<AttendanceLessonPage />} />
+                        </>
+                      ) : resource.name === "schedules" ? (
+                        <>
+                          <Route path="generator" element={<ScheduleGeneratorPage />} />
+                          <Route path="preferences" element={<TeacherPreferencesPage />} />
+                        </>
+                      ) : null}
+                    </Route>
+                  ))}
+                  <Route path="setup" element={<SetupWizard />} />
+                  <Route path="setup/import-status" element={<ImportStatusPage />} />
+                </Route>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="*" element={<ErrorComponent />} />
+              </Routes>
 
-                <DocumentTitleHandler />
-                <UnsavedChangesNotifier />
-                <RouteDebugger />
-              </Refine>
-            </AntdApp>
-          </ConfigProvider>
+              <DocumentTitleHandler />
+              <UnsavedChangesNotifier />
+              <RouteDebugger />
+            </Refine>
+          </ThemeProvider>
         </QueryClientProvider>
       </BrowserRouter>
     </React.StrictMode>

@@ -1,0 +1,27 @@
+<svg width="1440" height="900" viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Cuplikan Dashboard Akademik</title>
+  <desc id="desc">Ilustrasi tampilan dashboard dengan tiga kartu ringkasan, tabel distribusi nilai, dan tabel alert kehadiran.</desc>
+  <rect width="1440" height="900" rx="48" fill="#f1f5f9" />
+  <rect x="64" y="64" width="1312" height="120" rx="24" fill="#ffffff" />
+  <rect x="64" y="204" width="408" height="180" rx="28" fill="#e0edff" />
+  <rect x="504" y="204" width="408" height="180" rx="28" fill="#d1fae5" />
+  <rect x="944" y="204" width="408" height="180" rx="28" fill="#ffedd5" />
+  <rect x="64" y="408" width="648" height="240" rx="28" fill="#ffffff" />
+  <rect x="744" y="408" width="608" height="240" rx="28" fill="#ffffff" />
+  <rect x="64" y="664" width="1288" height="172" rx="28" fill="#ffffff" />
+  <rect x="96" y="704" width="280" height="24" rx="12" fill="#fed7aa" />
+  <rect x="96" y="744" width="220" height="20" rx="10" fill="#fbbf24" />
+  <rect x="352" y="744" width="220" height="20" rx="10" fill="#f97316" opacity="0.65" />
+  <rect x="608" y="744" width="220" height="20" rx="10" fill="#ef4444" opacity="0.4" />
+  <rect x="864" y="744" width="220" height="20" rx="10" fill="#ef4444" opacity="0.3" />
+  <rect x="1120" y="744" width="220" height="20" rx="10" fill="#ef4444" opacity="0.2" />
+  <circle cx="124" cy="244" r="28" fill="#1d4ed8" />
+  <circle cx="564" cy="244" r="28" fill="#16a34a" />
+  <circle cx="1004" cy="244" r="28" fill="#f97316" />
+  <rect x="120" y="468" width="220" height="20" rx="10" fill="#60a5fa" opacity="0.55" />
+  <rect x="120" y="516" width="220" height="20" rx="10" fill="#60a5fa" opacity="0.35" />
+  <rect x="120" y="564" width="220" height="20" rx="10" fill="#60a5fa" opacity="0.2" />
+  <rect x="800" y="468" width="340" height="20" rx="10" fill="#22c55e" opacity="0.65" />
+  <rect x="800" y="516" width="340" height="20" rx="10" fill="#f97316" opacity="0.5" />
+  <rect x="800" y="564" width="340" height="20" rx="10" fill="#ef4444" opacity="0.45" />
+</svg>

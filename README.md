@@ -2,6 +2,10 @@
 
 Platform pengelolaan absensi dan nilai siswa berbasis NestJS + React Admin. Monorepo ini memuat API terpusat, worker BullMQ, aplikasi admin berbasis Vite, dan shared package untuk schemas/types yang digunakan bersama.
 
+## Cuplikan Dashboard Terbaru
+
+![Dashboard Akademik terbaru](docs/dashboard-preview.svg)
+
 ## Struktur Monorepo
 
 ```
@@ -159,9 +163,10 @@ Worker juga membutuhkan `DATABASE_URL`, `REDIS_URL`, dan konfigurasi storage yan
 
 ### `apps/admin/.env`
 
-| Variabel       | Deskripsi                                | Contoh                         |
-| -------------- | ---------------------------------------- | ------------------------------ |
-| `VITE_API_URL` | Base URL API (termasuk prefix `/api/v1`) | `http://localhost:3000/api/v1` |
+| Variabel       | Deskripsi                                                          | Contoh                         |
+| -------------- | ------------------------------------------------------------------ | ------------------------------ |
+| `VITE_API_URL` | Base URL API (termasuk prefix `/api/v1`)                           | `http://localhost:3000/api/v1` |
+| `VITE_USE_MSW` | Aktifkan Mock Service Worker (`true`/`false`) untuk dashboard baru | `true`                         |
 
 ### Catatan keamanan
 
