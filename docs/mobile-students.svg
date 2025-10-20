@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="740" viewBox="0 0 360 740" role="img" aria-labelledby="title desc">
+  <title id="title">Cuplikan mobile Students (placeholder)</title>
+  <desc id="desc">Placeholder ilustrasi daftar siswa dalam kartu mobile.</desc>
+  <rect width="360" height="740" rx="28" ry="28" fill="#0f172a" />
+  <rect x="12" y="24" width="336" height="60" rx="16" fill="#1e293b" />
+  <text x="32" y="62" font-family="'Plus Jakarta Sans', sans-serif" font-size="20" fill="#e2e8f0">Students</text>
+  <rect x="12" y="108" width="336" height="92" rx="20" fill="#1e293b" />
+  <rect x="28" y="132" width="80" height="12" rx="6" fill="#e2e8f0" />
+  <rect x="28" y="154" width="120" height="10" rx="5" fill="#94a3b8" />
+  <rect x="28" y="176" width="200" height="8" rx="4" fill="#38bdf8" />
+  <rect x="12" y="212" width="336" height="92" rx="20" fill="#1e293b" />
+  <rect x="28" y="236" width="80" height="12" rx="6" fill="#e2e8f0" />
+  <rect x="28" y="258" width="120" height="10" rx="5" fill="#94a3b8" />
+  <rect x="28" y="280" width="200" height="8" rx="4" fill="#38bdf8" />
+  <rect x="12" y="316" width="336" height="92" rx="20" fill="#1e293b" />
+  <rect x="72" y="692" width="216" height="20" rx="10" fill="#1e293b" />
+  <text x="180" y="718" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" text-anchor="middle" fill="#94a3b8">Placeholder UI</text>
+</svg>

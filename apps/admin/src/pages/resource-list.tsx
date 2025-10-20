@@ -11,6 +11,7 @@ import {
   useCan,
   type CrudFilter,
 } from "@refinedev/core";
+import { Box, Stack, Typography as MuiTypography, useMediaQuery, useTheme } from "@mui/material";
 import { Space as AntdSpace } from "antd";
 import {
   FilterOutlined,
@@ -23,6 +24,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import { ConfirmModal } from "../components/confirm-modal";
 import { ResourceActionGuard } from "../components/resource-action-guard";
+import { ResponsiveList } from "../components/responsive/ResponsiveList";
+import { MobileCardList } from "../components/responsive/MobileCardList";
+import { FiltersBottomSheet } from "../components/responsive/FiltersBottomSheet";
 
 const safeStringify = (value: unknown) => {
   try {
@@ -44,6 +48,8 @@ export const ResourceList = () => {
   const resourceName = resource?.name;
   const resolvedResourceName = resourceName ?? resource?.identifier;
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
 
   const metaCreateAllowed = resource?.meta?.canCreate ?? Boolean(resource?.create);
   const metaEditAllowed = resource?.meta?.canEdit ?? Boolean(resource?.edit);
@@ -144,6 +150,7 @@ export const ResourceList = () => {
   const [searchValue, setSearchValue] = useState<string>("");
   const [selectedSortField, setSelectedSortField] = useState<string | undefined>();
   const [selectedSortOrder, setSelectedSortOrder] = useState<"ascend" | "descend" | undefined>();
+  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
 
   useEffect(() => {
     const activeSearchFilter = filters?.find(
@@ -534,6 +541,53 @@ export const ResourceList = () => {
     [columns]
   );
 
+  type TableColumn = ColumnsType<Record<string, unknown>>[number];
+
+  const resolveColumnValue = (column: TableColumn | undefined, record: Record<string, unknown>) => {
+    if (!column) return undefined;
+    const { dataIndex } = column;
+    if (Array.isArray(dataIndex)) {
+      return dataIndex.reduce<unknown>((acc, key) => {
+        if (acc && typeof acc === "object") {
+          return (acc as Record<string, unknown>)[key];
+        }
+        return undefined;
+      }, record);
+    }
+    if (typeof dataIndex === "string" || typeof dataIndex === "number") {
+      return (record as Record<string, unknown>)[dataIndex];
+    }
+    return undefined;
+  };
+
+  const stringifyValue = (value: unknown) => {
+    if (value === null || value === undefined) {
+      return "—";
+    }
+    if (typeof value === "string" || typeof value === "number") {
+      return String(value);
+    }
+    if (typeof value === "boolean") {
+      return value ? "Ya" : "Tidak";
+    }
+    if (value instanceof Date) {
+      return value.toLocaleString("id-ID");
+    }
+    return JSON.stringify(value);
+  };
+
+  const primitiveColumns = useMemo(
+    () => columns.filter((column) => typeof column.dataIndex === "string") as TableColumn[],
+    [columns]
+  );
+
+  const [primaryColumn, secondaryColumn, tertiaryColumn, ...restColumns] = primitiveColumns;
+  const metaColumns = restColumns.slice(0, 4);
+  const statusColumn = primitiveColumns.find((column) =>
+    String(column.dataIndex).toLowerCase().includes("status")
+  );
+  const actionsColumn = columnsWithActions.find((column) => column.key === "actions");
+
   return (
     <ResourceActionGuard action="list" resourceName={resolvedResourceName}>
       <>
@@ -591,66 +645,147 @@ export const ResourceList = () => {
           {errorResult}
           {!errorResult && (
             <>
-              <Space
-                wrap
-                style={{ width: "100%", marginBottom: 16, justifyContent: "space-between" }}
-                align="center"
-              >
-                <Space wrap>
-                  <Input.Search
-                    value={searchValue}
-                    onChange={(event) => setSearchValue(event.target.value)}
-                    onSearch={handleSearchSubmit}
-                    allowClear
-                    enterButton={<SearchOutlined />}
-                    placeholder={`Cari ${resourceLabelLower}`}
-                    style={{ minWidth: 220 }}
-                  />
-                  {columnOptions.length > 0 ? (
-                    <Select
+              {isMdUp ? (
+                <Space
+                  wrap
+                  style={{ width: "100%", marginBottom: 16, justifyContent: "space-between" }}
+                  align="center"
+                >
+                  <Space wrap>
+                    <Input.Search
+                      value={searchValue}
+                      onChange={(event) => setSearchValue(event.target.value)}
+                      onSearch={handleSearchSubmit}
                       allowClear
-                      placeholder="Kolom urut"
-                      style={{ minWidth: 180 }}
-                      options={columnOptions}
-                      value={selectedSortField}
-                      onChange={(value) => handleSortFieldChange(value as string | undefined)}
-                      onClear={() => handleSortFieldChange(undefined)}
-                      suffixIcon={<FilterOutlined />}
+                      enterButton={<SearchOutlined />}
+                      placeholder={`Cari ${resourceLabelLower}`}
+                      style={{ minWidth: 220 }}
                     />
-                  ) : null}
-                  <Button.Group>
-                    <Tooltip title="Urutkan menaik">
-                      <Button
-                        icon={<SortAscendingOutlined />}
-                        disabled={!selectedSortField}
-                        type={selectedSortOrder === "ascend" ? "primary" : "default"}
-                        onClick={() => handleSortOrderChange("ascend")}
+                    {columnOptions.length > 0 ? (
+                      <Select
+                        allowClear
+                        placeholder="Kolom urut"
+                        style={{ minWidth: 180 }}
+                        options={columnOptions}
+                        value={selectedSortField}
+                        onChange={(value) => handleSortFieldChange(value as string | undefined)}
+                        onClear={() => handleSortFieldChange(undefined)}
+                        suffixIcon={<FilterOutlined />}
                       />
+                    ) : null}
+                    <Button.Group>
+                      <Tooltip title="Urutkan menaik">
+                        <Button
+                          icon={<SortAscendingOutlined />}
+                          disabled={!selectedSortField}
+                          type={selectedSortOrder === "ascend" ? "primary" : "default"}
+                          onClick={() => handleSortOrderChange("ascend")}
+                        />
+                      </Tooltip>
+                      <Tooltip title="Urutkan menurun">
+                        <Button
+                          icon={<SortDescendingOutlined />}
+                          disabled={!selectedSortField}
+                          type={selectedSortOrder === "descend" ? "primary" : "default"}
+                          onClick={() => handleSortOrderChange("descend")}
+                        />
+                      </Tooltip>
+                    </Button.Group>
+                    <Tooltip title="Reset filter & urutan">
+                      <Button icon={<ReloadOutlined />} onClick={handleResetControls} />
                     </Tooltip>
-                    <Tooltip title="Urutkan menurun">
-                      <Button
-                        icon={<SortDescendingOutlined />}
-                        disabled={!selectedSortField}
-                        type={selectedSortOrder === "descend" ? "primary" : "default"}
-                        onClick={() => handleSortOrderChange("descend")}
-                      />
-                    </Tooltip>
-                  </Button.Group>
-                  <Tooltip title="Reset filter & urutan">
-                    <Button icon={<ReloadOutlined />} onClick={handleResetControls} />
-                  </Tooltip>
+                  </Space>
+                  <Typography.Text type="secondary">Endpoint: {resourceEndpoint}</Typography.Text>
                 </Space>
-                <Typography.Text type="secondary">Endpoint: {resourceEndpoint}</Typography.Text>
-              </Space>
-              <Table
-                {...restTableProps}
-                dataSource={dataSource}
-                columns={columnsWithActions}
-                loading={tableLoadingProps}
-                locale={tableLocale}
-                rowKey={(record) =>
-                  (record as { id?: string | number }).id ?? JSON.stringify(record)
+              ) : (
+                <Stack spacing={1.5} sx={{ mb: 2 }}>
+                  <Button
+                    type="primary"
+                    icon={<SearchOutlined />}
+                    onClick={() => setFiltersSheetOpen(true)}
+                  >
+                    Cari & Filter
+                  </Button>
+                  <Typography.Text type="secondary">Endpoint: {resourceEndpoint}</Typography.Text>
+                </Stack>
+              )}
+              <ResponsiveList
+                datagrid={
+                  <Table
+                    {...restTableProps}
+                    dataSource={dataSource}
+                    columns={columnsWithActions}
+                    loading={tableLoadingProps}
+                    locale={tableLocale}
+                    rowKey={(record) =>
+                      (record as { id?: string | number }).id ?? JSON.stringify(record)
+                    }
+                  />
                 }
+                records={dataSource as Record<string, unknown>[]}
+                mobilerender={(record, index) => (
+                  <MobileCardList
+                    records={[record]}
+                    primary={(item) => stringifyValue(resolveColumnValue(primaryColumn, item))}
+                    secondary={
+                      secondaryColumn
+                        ? (item) => stringifyValue(resolveColumnValue(secondaryColumn, item))
+                        : undefined
+                    }
+                    tertiary={
+                      tertiaryColumn
+                        ? (item) => stringifyValue(resolveColumnValue(tertiaryColumn, item))
+                        : undefined
+                    }
+                    meta={
+                      metaColumns.length
+                        ? (item) =>
+                            metaColumns.map((column) => (
+                              <Box key={String(column.dataIndex)}>
+                                <MuiTypography variant="caption" color="text.secondary">
+                                  {typeof column.title === "string"
+                                    ? column.title
+                                    : formatTitle(String(column.dataIndex))}
+                                </MuiTypography>
+                                <MuiTypography variant="body2" sx={{ fontWeight: 600 }}>
+                                  {stringifyValue(resolveColumnValue(column, item))}
+                                </MuiTypography>
+                              </Box>
+                            ))
+                        : undefined
+                    }
+                    statusChip={
+                      statusColumn
+                        ? (item) => {
+                            const value = resolveColumnValue(statusColumn, item);
+                            if (!value) return null;
+                            const text = stringifyValue(value);
+                            const normalized = text.toLowerCase();
+                            let color: "default" | "success" | "warning" | "error" = "default";
+                            if (["aktif", "active", "published", "selesai"].includes(normalized)) {
+                              color = "success";
+                            } else if (["pending", "draft", "menunggu"].includes(normalized)) {
+                              color = "warning";
+                            } else if (
+                              ["nonaktif", "inactive", "banned", "hapus"].includes(normalized)
+                            ) {
+                              color = "error";
+                            }
+                            return { label: text, color };
+                          }
+                        : undefined
+                    }
+                    actions={
+                      actionsColumn
+                        ? (item) => (
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                              {actionsColumn.render?.(null as never, item as never, index) ?? null}
+                            </Box>
+                          )
+                        : undefined
+                    }
+                  />
+                )}
               />
             </>
           )}
@@ -663,6 +798,63 @@ export const ResourceList = () => {
           onCancel={handleConfirmCancel}
           confirmLoading={isDeleting}
         />
+        <FiltersBottomSheet
+          open={filtersSheetOpen}
+          onClose={() => setFiltersSheetOpen(false)}
+          onReset={() => {
+            handleResetControls();
+            setFiltersSheetOpen(false);
+          }}
+          onApply={() => {
+            handleSearchSubmit(searchValue);
+            setFiltersSheetOpen(false);
+          }}
+        >
+          <Stack spacing={2}>
+            <Input.Search
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+              onSearch={(value) => {
+                handleSearchSubmit(value);
+                setFiltersSheetOpen(false);
+              }}
+              allowClear
+              enterButton={<SearchOutlined />}
+              placeholder={`Cari ${resourceLabelLower}`}
+            />
+            {columnOptions.length > 0 ? (
+              <Select
+                allowClear
+                placeholder="Kolom urut"
+                options={columnOptions}
+                value={selectedSortField}
+                onChange={(value) => handleSortFieldChange(value as string | undefined)}
+                onClear={() => handleSortFieldChange(undefined)}
+                suffixIcon={<FilterOutlined />}
+                style={{ width: "100%" }}
+              />
+            ) : null}
+            <Stack direction="row" spacing={1}>
+              <Button
+                block
+                icon={<SortAscendingOutlined />}
+                disabled={!selectedSortField}
+                type={selectedSortOrder === "ascend" ? "primary" : "default"}
+                onClick={() => handleSortOrderChange("ascend")}
+              />
+              <Button
+                block
+                icon={<SortDescendingOutlined />}
+                disabled={!selectedSortField}
+                type={selectedSortOrder === "descend" ? "primary" : "default"}
+                onClick={() => handleSortOrderChange("descend")}
+              />
+            </Stack>
+            <Button icon={<ReloadOutlined />} onClick={handleResetControls}>
+              Reset Filter & Urutan
+            </Button>
+          </Stack>
+        </FiltersBottomSheet>
       </>
     </ResourceActionGuard>
   );

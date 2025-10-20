@@ -1,5 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import { BarChart3 } from "lucide-react";
 

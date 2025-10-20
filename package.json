@@ -9,6 +9,8 @@
     "dev:admin": "pnpm --filter @apps/admin dev",
     "build": "pnpm -r build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:typeaware": "eslint -c eslint.typeaware.config.js \"apps/**/*.{ts,tsx}\"",
     "test": "pnpm -r test",
     "typecheck": "tsc -b --pretty false",
     "format": "pnpm -r format",
@@ -39,7 +41,11 @@
     "vitest": "3.2.4"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,json,md}": [
+    "apps/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": [
       "prettier --write"
     ]
   },

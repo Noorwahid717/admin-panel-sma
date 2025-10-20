@@ -6,6 +6,12 @@ Platform pengelolaan absensi dan nilai siswa berbasis NestJS + React Admin. Mono
 
 ![Dashboard Akademik terbaru](docs/dashboard-preview.svg)
 
+### Cuplikan Mobile (360px)
+
+| Dashboard                                      | Students                                     | Attendance                                       |
+| ---------------------------------------------- | -------------------------------------------- | ------------------------------------------------ |
+| ![Dashboard mobile](docs/mobile-dashboard.svg) | ![Students mobile](docs/mobile-students.svg) | ![Attendance mobile](docs/mobile-attendance.svg) |
+
 ## Struktur Monorepo
 
 ```

@@ -21,4 +21,9 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: "es2022",
   },
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./test/setupTests.ts"],
+    globals: true,
+  },
 }));
