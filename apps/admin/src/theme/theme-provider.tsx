@@ -4,9 +4,11 @@ import {
   ThemeProvider as MuiThemeProvider,
   CssBaseline,
   createTheme,
+  responsiveFontSizes,
   type PaletteMode,
 } from "@mui/material";
 import { themeTokens } from "./tokens";
+import { responsiveThemeOptions } from "./responsive";
 
 const STORAGE_KEY = "sma-admin-theme-mode";
 
@@ -46,96 +48,94 @@ export const ThemeProvider: React.FC<React.PropsWithChildren> = ({ children }) =
     document.documentElement.dataset.theme = mode;
   }, [mode]);
 
-  const muiTheme = React.useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode,
-          primary: {
-            main: themeTokens.primary,
-          },
-          secondary: {
-            main: mode === "dark" ? "#38bdf8" : "#0ea5e9",
-          },
-          success: {
-            main: themeTokens.accentGreen,
-          },
-          warning: {
-            main: themeTokens.accentOrange,
-          },
-          background: {
-            default: mode === "dark" ? "#0f172a" : "#f8fafc",
-            paper: mode === "dark" ? "#111827" : "#ffffff",
-          },
-          text: {
-            primary: mode === "dark" ? "#e2e8f0" : "#0f172a",
-            secondary:
-              mode === "dark" ? themeTokens.secondaryTextDark : themeTokens.secondaryTextLight,
-          },
+  const muiTheme = React.useMemo(() => {
+    const baseTheme = createTheme(responsiveThemeOptions(mode));
+    const theme = createTheme(baseTheme, {
+      palette: {
+        primary: {
+          main: themeTokens.primary,
         },
-        typography: {
-          fontFamily: "'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif",
-          h5: {
-            fontWeight: 600,
-            letterSpacing: -0.2,
-          },
-          subtitle2: {
-            color: mode === "dark" ? themeTokens.secondaryTextDark : themeTokens.secondaryTextLight,
-          },
+        secondary: {
+          main: mode === "dark" ? "#38bdf8" : "#0ea5e9",
         },
-        shape: {
-          borderRadius: 16,
+        success: {
+          main: themeTokens.accentGreen,
         },
-        components: {
-          MuiButton: {
-            styleOverrides: {
-              root: {
-                minHeight: 40,
-                textTransform: "none",
-                fontWeight: 600,
-                borderRadius: 12,
-                boxShadow: "none",
-                "&:focus-visible": {
-                  boxShadow: themeTokens.focusRing,
-                  outline: "none",
-                },
-              },
-            },
-          },
-          MuiIconButton: {
-            styleOverrides: {
-              root: {
-                borderRadius: 12,
-                "&:focus-visible": {
-                  boxShadow: themeTokens.focusRing,
-                  outline: "none",
-                },
-              },
-            },
-          },
-          MuiPaper: {
-            styleOverrides: {
-              root: {
-                borderRadius: themeTokens.cardBorderRadius,
-                boxShadow:
-                  mode === "dark" ? "0 12px 40px rgba(15, 23, 42, 0.45)" : themeTokens.cardShadow,
-              },
-            },
-          },
-          MuiListItemButton: {
-            styleOverrides: {
-              root: {
-                borderRadius: 12,
-                "&.Mui-focusVisible": {
-                  boxShadow: themeTokens.focusRing,
-                },
+        warning: {
+          main: themeTokens.accentOrange,
+        },
+        background: {
+          default: mode === "dark" ? "#0f172a" : "#f8fafc",
+          paper: mode === "dark" ? "#111827" : "#ffffff",
+        },
+        text: {
+          primary: mode === "dark" ? "#e2e8f0" : "#0f172a",
+          secondary:
+            mode === "dark" ? themeTokens.secondaryTextDark : themeTokens.secondaryTextLight,
+        },
+      },
+      typography: {
+        h5: {
+          fontWeight: 600,
+          letterSpacing: -0.2,
+        },
+        subtitle2: {
+          color: mode === "dark" ? themeTokens.secondaryTextDark : themeTokens.secondaryTextLight,
+        },
+      },
+      shape: {
+        borderRadius: 16,
+      },
+      components: {
+        MuiButton: {
+          styleOverrides: {
+            root: {
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: 12,
+              boxShadow: "none",
+              "&:focus-visible": {
+                boxShadow: themeTokens.focusRing,
+                outline: "none",
               },
             },
           },
         },
-      }),
-    [mode]
-  );
+        MuiIconButton: {
+          styleOverrides: {
+            root: {
+              borderRadius: 12,
+              "&:focus-visible": {
+                boxShadow: themeTokens.focusRing,
+                outline: "none",
+              },
+            },
+          },
+        },
+        MuiPaper: {
+          styleOverrides: {
+            root: {
+              borderRadius: themeTokens.cardBorderRadius,
+              boxShadow:
+                mode === "dark" ? "0 12px 40px rgba(15, 23, 42, 0.45)" : themeTokens.cardShadow,
+            },
+          },
+        },
+        MuiListItemButton: {
+          styleOverrides: {
+            root: {
+              borderRadius: 12,
+              "&.Mui-focusVisible": {
+                boxShadow: themeTokens.focusRing,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return responsiveFontSizes(theme);
+  }, [mode]);
 
   const antdConfig = React.useMemo(
     () => ({

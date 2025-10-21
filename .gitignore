@@ -12,3 +12,4 @@ husky/_
 .DS_Store
 .idea/
 .vscode/
+.vercel
