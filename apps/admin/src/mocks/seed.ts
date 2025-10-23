@@ -1372,11 +1372,35 @@ function createGrades(
 
   const componentById = new Map(gradeComponents.map((component) => [component.id, component]));
 
+  // Create student performance profiles for realistic distribution
+  // Categories: excellent (10%), good (30%), average (40%), struggling (15%), poor (5%)
+  const studentPerformanceLevel = new Map<string, number>();
+  enrollments.forEach((enrollment, idx) => {
+    const rand = (idx * 7919) % 100; // pseudo-random but consistent
+    let level: number;
+    if (rand < 5)
+      level = 1; // poor: 50-65
+    else if (rand < 20)
+      level = 2; // struggling: 65-73
+    else if (rand < 60)
+      level = 3; // average: 73-83
+    else if (rand < 90)
+      level = 4; // good: 83-92
+    else level = 5; // excellent: 92-100
+    studentPerformanceLevel.set(enrollment.id, level);
+  });
+
   const grades: GradeRecord[] = [];
   enrollments.forEach((enrollment, enrollIndex) => {
     const mappings = classSubjectByClass.get(enrollment.classId) ?? [];
+    const performanceLevel = studentPerformanceLevel.get(enrollment.id) ?? 3;
+
     mappings.forEach((mapping, subjectIndex) => {
       const components = gradeComponentMap.get(mapping.id) ?? [];
+
+      // Subject difficulty varies: some students excel at certain subjects
+      const subjectAffinity = ((enrollIndex * 13 + subjectIndex * 17) % 10) - 5; // -5 to +4
+
       components.forEach((component, componentIndex) => {
         const seed =
           enrollIndex * 37 +
@@ -1384,12 +1408,34 @@ function createGrades(
           componentIndex * 11 +
           mapping.id.length * 5 +
           component.id.length * 3;
-        const baseScore =
-          60 +
-          ((seed % 41) +
-            Math.sin((seed % 13) * Math.PI) * 4 +
-            Math.cos((seed % 17) * Math.PI * 0.5) * 5);
-        const score = Math.min(100, Math.max(45, Math.round(baseScore)));
+
+        // Base score by performance level
+        let baseScore: number;
+        switch (performanceLevel) {
+          case 1:
+            baseScore = 50 + (seed % 16);
+            break; // 50-65
+          case 2:
+            baseScore = 65 + (seed % 9);
+            break; // 65-73
+          case 3:
+            baseScore = 73 + (seed % 11);
+            break; // 73-83
+          case 4:
+            baseScore = 83 + (seed % 10);
+            break; // 83-92
+          case 5:
+            baseScore = 92 + (seed % 9);
+            break; // 92-100
+          default:
+            baseScore = 75;
+        }
+
+        // Add subject affinity and component variation
+        const componentVariation = Math.sin(seed * 0.1) * 3 + Math.cos(seed * 0.2) * 2;
+        const finalScore = baseScore + subjectAffinity + componentVariation;
+        const score = Math.min(100, Math.max(40, Math.round(finalScore)));
+
         const id =
           mapping.id === "cs_xipa_mat" && component.id === "gc_mat_mid"
             ? `grade_aditya_mid_mat_${enrollIndex}`
@@ -1463,15 +1509,55 @@ function createAttendance(
     return shifted.toISOString();
   };
 
+  // Create student attendance profiles for realistic variation
+  // Categories: excellent (95-100%), good (85-94%), average (75-84%), poor (60-74%), very poor (<60%)
+  const studentAttendanceProfile = new Map<string, number>();
+  enrollments.forEach((enrollment, idx) => {
+    const rand = (idx * 9973) % 100; // pseudo-random but consistent
+    let profile: number;
+    if (rand < 10)
+      profile = 1; // very poor: 50-70% attendance
+    else if (rand < 25)
+      profile = 2; // poor: 70-80% attendance
+    else if (rand < 55)
+      profile = 3; // average: 80-90% attendance
+    else if (rand < 85)
+      profile = 4; // good: 90-95% attendance
+    else profile = 5; // excellent: 95-100% attendance
+    studentAttendanceProfile.set(enrollment.id, profile);
+  });
+
   enrollments.forEach((enrollment) => {
     const classStudents = studentsByClass.get(enrollment.classId) ?? [];
     const studentIndex = classStudents.findIndex((student) => student.id === enrollment.studentId);
     const baseIndex = enrollmentIndexMap.get(enrollment.id) ?? 0;
+    const attendanceProfile = studentAttendanceProfile.get(enrollment.id) ?? 3;
 
     ATTENDANCE_DATES.forEach((date, dateIndex) => {
-      const statusCycle = ["H", "H", "H", "H", "H", "S", "H", "H", "I", "H", "H", "A"];
-      const status =
-        statusCycle[(studentIndex + baseIndex + dateIndex) % statusCycle.length] ?? statusCycle[0];
+      // Determine status based on attendance profile
+      let status: "H" | "S" | "I" | "A";
+      const rand = (studentIndex * 17 + baseIndex * 13 + dateIndex * 7) % 100;
+
+      switch (attendanceProfile) {
+        case 1: // very poor: 50-70% present
+          status = rand < 60 ? "H" : rand < 75 ? "S" : rand < 85 ? "I" : "A";
+          break;
+        case 2: // poor: 70-80% present
+          status = rand < 75 ? "H" : rand < 87 ? "S" : rand < 95 ? "I" : "A";
+          break;
+        case 3: // average: 80-90% present
+          status = rand < 85 ? "H" : rand < 93 ? "S" : rand < 98 ? "I" : "A";
+          break;
+        case 4: // good: 90-95% present
+          status = rand < 92 ? "H" : rand < 97 ? "S" : rand < 99 ? "I" : "A";
+          break;
+        case 5: // excellent: 95-100% present
+          status = rand < 97 ? "H" : rand < 99 ? "S" : "I";
+          break;
+        default:
+          status = "H";
+      }
+
       const note =
         status === "S"
           ? "Surat keterangan dokter"
@@ -1509,10 +1595,32 @@ function createAttendance(
         enrollments
           .filter((enrollment) => enrollment.classId === classId)
           .forEach((enrollment, enrollIndex) => {
-            const statusCycle = ["H", "H", "H", "S", "H", "H", "H", "I", "H", "H"];
-            const status =
-              statusCycle[(enrollIndex + subjectIndex + dateIndex) % statusCycle.length] ??
-              statusCycle[0];
+            const attendanceProfile = studentAttendanceProfile.get(enrollment.id) ?? 3;
+
+            // Use same profile as daily attendance but with slight variation
+            let status: "H" | "S" | "I" | "A";
+            const rand = (enrollIndex * 23 + subjectIndex * 19 + dateIndex * 11) % 100;
+
+            switch (attendanceProfile) {
+              case 1: // very poor: 50-70% present
+                status = rand < 60 ? "H" : rand < 75 ? "S" : rand < 85 ? "I" : "A";
+                break;
+              case 2: // poor: 70-80% present
+                status = rand < 75 ? "H" : rand < 87 ? "S" : rand < 95 ? "I" : "A";
+                break;
+              case 3: // average: 80-90% present
+                status = rand < 85 ? "H" : rand < 93 ? "S" : rand < 98 ? "I" : "A";
+                break;
+              case 4: // good: 90-95% present
+                status = rand < 92 ? "H" : rand < 97 ? "S" : rand < 99 ? "I" : "A";
+                break;
+              case 5: // excellent: 95-100% present
+                status = rand < 97 ? "H" : rand < 99 ? "S" : "I";
+                break;
+              default:
+                status = "H";
+            }
+
             const note =
               status === "S"
                 ? "Demam tinggi"
