@@ -268,7 +268,7 @@ const NAV_ITEMS = (logout: () => void): NavNode[] => [
         label: "Konfigurasi",
         icon: <Settings2 size={18} aria-label="Konfigurasi" />,
         ariaLabel: "Konfigurasi",
-        resource: "grade-configs",
+        path: "/configuration",
       },
       {
         key: "administrasi-backup",

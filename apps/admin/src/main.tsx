@@ -72,6 +72,7 @@ import { TeacherPreferencesPage } from "./pages/teacher-preferences";
 import { CalendarPage } from "./pages/calendar";
 import { UsersPage } from "./pages/users";
 import { HomeroomAssignmentsPage } from "./pages/homeroom-assignments";
+import ConfigurationPage from "./pages/configuration";
 
 import "@refinedev/antd/dist/reset.css";
 import "antd/dist/reset.css";
@@ -516,6 +517,7 @@ async function bootstrap() {
                   ))}
                   <Route path="setup" element={<SetupWizard />} />
                   <Route path="setup/import-status" element={<ImportStatusPage />} />
+                  <Route path="configuration" element={<ConfigurationPage />} />
                 </Route>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="*" element={<ErrorComponent />} />
