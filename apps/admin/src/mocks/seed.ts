@@ -487,6 +487,22 @@ function createTeachers(subjects: SubjectRecord[]): TeacherRecord[] {
     "Anindya",
     "Pratiwi",
     "Larissa",
+    "Rina",
+    "Sari",
+    "Wulan",
+    "Anggun",
+    "Kartika",
+    "Melati",
+    "Widya",
+    "Nurul",
+    "Fitriana",
+    "Riani",
+    "Septiana",
+    "Diah",
+    "Tri",
+    "Endah",
+    "Retno",
+    "Indah",
   ];
   const maleNames = [
     "Budi",
@@ -505,6 +521,22 @@ function createTeachers(subjects: SubjectRecord[]): TeacherRecord[] {
     "Kevin",
     "Prasetyo",
     "Satria",
+    "Agung",
+    "Darmawan",
+    "Eko",
+    "Joko",
+    "Hadi",
+    "Bambang",
+    "Teguh",
+    "Wahyu",
+    "Yudi",
+    "Sigit",
+    "Arief",
+    "Budiman",
+    "Cahyono",
+    "Tri",
+    "Dwi",
+    "Muhammad",
   ];
   const lastNames = [
     "Siregar",
@@ -523,19 +555,47 @@ function createTeachers(subjects: SubjectRecord[]): TeacherRecord[] {
     "Manurung",
     "Permana",
     "Wijayanti",
+    "Nugroho",
+    "Setiawan",
+    "Kurniawan",
+    "Rahman",
+    "Hidayat",
+    "Pramono",
+    "Susanto",
+    "Hakim",
+    "Suryanto",
+    "Raharjo",
+    "Suharto",
+    "Subagyo",
+    "Yulianto",
+    "Firmansyah",
+    "Gunawan",
+    "Hermawan",
   ];
 
   const teacherCount = 32;
   const teachers: TeacherRecord[] = [];
+  const usedNames = new Set<string>();
 
   for (let index = 0; index < teacherCount; index += 1) {
     const isFemale = index % 2 === 0;
-    const firstName = isFemale
-      ? femaleNames[index % femaleNames.length]
-      : maleNames[index % maleNames.length];
-    const lastName = lastNames[(index * 3) % lastNames.length];
-    const prefix = isFemale ? "Ibu" : "Pak";
-    const fullName = `${prefix} ${firstName} ${lastName}`;
+    let firstName: string;
+    let lastName: string;
+    let fullName: string;
+    let attempts = 0;
+
+    // Ensure unique name combination
+    do {
+      firstName = isFemale
+        ? femaleNames[(index + attempts) % femaleNames.length]
+        : maleNames[(index + attempts) % maleNames.length];
+      lastName = lastNames[(index * 3 + attempts * 7) % lastNames.length];
+      const prefix = isFemale ? "Ibu" : "Pak";
+      fullName = `${prefix} ${firstName} ${lastName}`;
+      attempts += 1;
+    } while (usedNames.has(fullName) && attempts < 100);
+
+    usedNames.add(fullName);
     const subject = subjects[index % subjects.length];
     const teacherId = `tch_${slugify(firstName)}_${slugify(lastName)}_${pad(index + 1, 2)}`;
 
@@ -661,7 +721,6 @@ function createStudents(classes: ClassRecord[]): {
     "Bagas",
     "Candra",
     "Dimas",
-    "Eka",
     "Fajar",
     "Gilang",
     "Hendra",
@@ -677,6 +736,78 @@ function createStudents(classes: ClassRecord[]): {
     "Surya",
     "Tirta",
     "Yoga",
+    "Zaki",
+    "Arif",
+    "Bima",
+    "Cahya",
+    "Danang",
+    "Eko",
+    "Farel",
+    "Galih",
+    "Habib",
+    "Irfan",
+    "Joko",
+    "Kurnia",
+    "Lukman",
+    "Maulana",
+    "Nugroho",
+    "Omar",
+    "Pandu",
+    "Reza",
+    "Satria",
+    "Taufik",
+    "Umar",
+    "Vino",
+    "Wahyu",
+    "Yoga",
+    "Zainal",
+    "Amir",
+    "Bayu",
+    "Danu",
+    "Erlangga",
+    "Fadhil",
+    "Ghani",
+    "Hakim",
+    "Iwan",
+    "Jaya",
+    "Krisna",
+    "Lukman",
+    "Mahesa",
+    "Naufal",
+    "Ozil",
+    "Panji",
+    "Rama",
+    "Syahrul",
+    "Tegar",
+    "Udin",
+    "Vikram",
+    "Wira",
+    "Xavier",
+    "Yanto",
+    "Zain",
+    "Alam",
+    "Bramantyo",
+    "Catur",
+    "Dedi",
+    "Firdaus",
+    "Gibran",
+    "Haryo",
+    "Ibrahim",
+    "Jatmiko",
+    "Kamal",
+    "Latif",
+    "Mukhlis",
+    "Nanda",
+    "Oni",
+    "Prima",
+    "Rizky",
+    "Samsul",
+    "Tohir",
+    "Ubaidillah",
+    "Varian",
+    "Windu",
+    "Yusuf",
+    "Zidan",
   ];
   const femaleNames = [
     "Anisa",
@@ -699,6 +830,78 @@ function createStudents(classes: ClassRecord[]): {
     "Rani",
     "Salsabila",
     "Vania",
+    "Wulan",
+    "Yuni",
+    "Zahra",
+    "Ayu",
+    "Bunga",
+    "Cinta",
+    "Dina",
+    "Elsa",
+    "Fira",
+    "Gisela",
+    "Hasna",
+    "Intan",
+    "Jasmine",
+    "Kiara",
+    "Luna",
+    "Mawar",
+    "Nabila",
+    "Okta",
+    "Puspita",
+    "Queena",
+    "Ratna",
+    "Sinta",
+    "Tiara",
+    "Uswatun",
+    "Vira",
+    "Winda",
+    "Yolanda",
+    "Zahratul",
+    "Andini",
+    "Berliana",
+    "Cantika",
+    "Dinda",
+    "Elvira",
+    "Farah",
+    "Ghina",
+    "Hesti",
+    "Ira",
+    "Jihan",
+    "Kartika",
+    "Laila",
+    "Melati",
+    "Natasya",
+    "Oktavia",
+    "Prita",
+    "Raisa",
+    "Safira",
+    "Titin",
+    "Ulfa",
+    "Vanya",
+    "Widya",
+    "Yunita",
+    "Zahwa",
+    "Amelia",
+    "Bulan",
+    "Clarissa",
+    "Diah",
+    "Elina",
+    "Fatimah",
+    "Gina",
+    "Hana",
+    "Inayah",
+    "Juwita",
+    "Keysha",
+    "Linda",
+    "Marsha",
+    "Naila",
+    "Ovi",
+    "Putri",
+    "Rara",
+    "Sari",
+    "Tasya",
+    "Ulfah",
   ];
   const lastNames = [
     "Wijaya",
@@ -721,6 +924,68 @@ function createStudents(classes: ClassRecord[]): {
     "Rahmadi",
     "Hardy",
     "Mulia",
+    "Nugroho",
+    "Setiawan",
+    "Kurniawan",
+    "Hidayat",
+    "Pramono",
+    "Rahman",
+    "Susanto",
+    "Hartono",
+    "Wicaksono",
+    "Gunawan",
+    "Hakim",
+    "Firmansyah",
+    "Hermawan",
+    "Suryanto",
+    "Raharjo",
+    "Yulianto",
+    "Purnomo",
+    "Subagyo",
+    "Budiman",
+    "Cahyono",
+    "Darmawan",
+    "Efendi",
+    "Fauzi",
+    "Ghozali",
+    "Haryanto",
+    "Irawan",
+    "Jaya",
+    "Kusnandar",
+    "Lesmana",
+    "Maulana",
+    "Nasution",
+    "Oktavian",
+    "Perdana",
+    "Ramadhan",
+    "Suharto",
+    "Tarigan",
+    "Utomo",
+    "Wardana",
+    "Yanto",
+    "Zulfikar",
+    "Adiputra",
+    "Basuki",
+    "Chandra",
+    "Dahlan",
+    "Erlangga",
+    "Fadillah",
+    "Ginanjar",
+    "Hamdani",
+    "Iskandar",
+    "Jatmiko",
+    "Kartika",
+    "Lukman",
+    "Mardani",
+    "Nainggolan",
+    "Pamungkas",
+    "Rizaldi",
+    "Santosa",
+    "Tanjung",
+    "Usada",
+    "Wibowo",
+    "Yahya",
+    "Zakaria",
   ];
   const guardianNames = [
     "Bambang",
@@ -743,6 +1008,80 @@ function createStudents(classes: ClassRecord[]): {
     "Endah",
     "Rahman",
     "Indah",
+    "Budi",
+    "Widya",
+    "Cahyono",
+    "Retno",
+    "Eko",
+    "Wati",
+    "Fajar",
+    "Lestari",
+    "Gunawan",
+    "Tri",
+    "Hadi",
+    "Ningsih",
+    "Irfan",
+    "Dewi",
+    "Jaya",
+    "Sri",
+    "Krisna",
+    "Sari",
+    "Lukman",
+    "Ani",
+    "Maman",
+    "Yuni",
+    "Nanda",
+    "Fitri",
+    "Oka",
+    "Gita",
+    "Pandu",
+    "Maya",
+    "Reza",
+    "Nita",
+    "Satria",
+    "Linda",
+    "Taufik",
+    "Mira",
+    "Umar",
+    "Dina",
+    "Wahyu",
+    "Eni",
+    "Yoga",
+    "Farida",
+    "Zainal",
+    "Hasna",
+    "Arif",
+    "Intan",
+    "Bima",
+    "Jelita",
+    "Cahya",
+    "Kirana",
+    "Danang",
+    "Laila",
+    "Erlangga",
+    "Melati",
+    "Farel",
+    "Nabila",
+    "Galih",
+    "Olivia",
+    "Habib",
+    "Putri",
+    "Ibrahim",
+    "Raisa",
+    "Kamal",
+    "Safira",
+    "Latif",
+    "Tiara",
+    "Mukhlis",
+    "Ulfa",
+    "Oni",
+    "Vira",
+    "Prima",
+    "Winda",
+    "Rizky",
+    "Yolanda",
+    "Samsul",
+    "Zahra",
   ];
 
   const canonicalPerClass: Record<string, Array<Partial<StudentRecord>>> = {
@@ -798,6 +1137,8 @@ function createStudents(classes: ClassRecord[]): {
 
   const students: StudentRecord[] = [];
   const studentsByClass = new Map<string, StudentRecord[]>();
+  const usedStudentNames = new Set<string>();
+  const usedGuardianNames = new Set<string>();
   let sequence = 0;
 
   classes.forEach((klass, classIndex) => {
@@ -831,6 +1172,8 @@ function createStudents(classes: ClassRecord[]): {
         classId: klass.id,
         status: entry.status ?? "active",
       };
+      usedStudentNames.add(student.fullName);
+      usedGuardianNames.add(student.guardian);
       classStudents.push(student);
       students.push(student);
       sequence += 1;
@@ -840,16 +1183,37 @@ function createStudents(classes: ClassRecord[]): {
     for (let offset = classStudents.length; offset < targetSize; offset += 1) {
       const globalIndex = sequence + offset;
       const isMale = (offset + classIndex) % 2 === 0;
-      const firstName = isMale
-        ? maleNames[globalIndex % maleNames.length]
-        : femaleNames[globalIndex % femaleNames.length];
-      const lastName = lastNames[(globalIndex * 2) % lastNames.length];
-      const guardianName = guardianNames[(globalIndex + offset) % guardianNames.length];
+
+      // Generate unique student name
+      let firstName: string;
+      let lastName: string;
+      let fullName: string;
+      let attempts = 0;
+      do {
+        firstName = isMale
+          ? maleNames[(globalIndex + attempts) % maleNames.length]
+          : femaleNames[(globalIndex + attempts) % femaleNames.length];
+        lastName = lastNames[(globalIndex * 2 + attempts * 5) % lastNames.length];
+        fullName = `${firstName} ${lastName}`;
+        attempts += 1;
+      } while (usedStudentNames.has(fullName) && attempts < 500);
+      usedStudentNames.add(fullName);
+
+      // Generate unique guardian name
+      let guardianName: string;
+      let guardianFullName: string;
+      attempts = 0;
+      do {
+        guardianName = guardianNames[(globalIndex + offset + attempts) % guardianNames.length];
+        guardianFullName = `${guardianName} ${lastName}`;
+        attempts += 1;
+      } while (usedGuardianNames.has(guardianFullName) && attempts < 500);
+      usedGuardianNames.add(guardianFullName);
+
       const status = (globalIndex + offset) % 18 === 0 ? "inactive" : "active";
       const birthYear = 2010 - (klass.level - 10) - (isMale ? 1 : 0);
       const month = pad(((globalIndex + offset) % 12) + 1, 2);
       const day = pad(((globalIndex * 3 + offset) % 26) + 1, 2);
-      const fullName = `${firstName} ${lastName}`;
 
       const student: StudentRecord = {
         id: `stu_${slugify(firstName)}_${slugify(lastName)}_${pad(globalIndex + 1, 4)}`,
@@ -857,7 +1221,7 @@ function createStudents(classes: ClassRecord[]): {
         fullName,
         gender: isMale ? "M" : "F",
         birthDate: `${birthYear}-${month}-${day}`,
-        guardian: `${guardianName} ${lastName}`,
+        guardian: guardianFullName,
         guardianPhone: `0815${pad(500000 + globalIndex * 11, 7)}`,
         guardianEmail: `${slugify(guardianName)}.${slugify(lastName)}@example.local`,
         classId: klass.id,
@@ -907,10 +1271,28 @@ function createSchedules(classSubjects: ClassSubjectRecord[]): ScheduleRecord[] 
     { start: "13:35", end: "14:20" },
   ];
 
+  // Track room usage to avoid conflicts: "day-slot-room" => classSubjectId
+  const roomUsage = new Map<string, string>();
+
   return classSubjects.flatMap((mapping, index) => {
     const dayOfWeek = (index % 5) + 1;
-    const slot = slots[index % slots.length];
-    const room = `Ruang ${100 + ((index * 7) % 12)}`;
+    const slotIndex = index % slots.length;
+    const slot = slots[slotIndex];
+
+    // Find available room for this day-slot combination
+    let roomNumber = 100 + ((index * 7) % 30); // More room options (30 rooms)
+    let attempts = 0;
+    let room = `Ruang ${roomNumber}`;
+    const key = `${dayOfWeek}-${slotIndex}-${room}`;
+
+    // Try to find a free room (max 50 attempts)
+    while (roomUsage.has(key) && attempts < 50) {
+      attempts += 1;
+      roomNumber = 100 + ((roomNumber + 1) % 30);
+      room = `Ruang ${roomNumber}`;
+    }
+
+    roomUsage.set(`${dayOfWeek}-${slotIndex}-${room}`, mapping.id);
 
     return [
       {
@@ -920,7 +1302,7 @@ function createSchedules(classSubjects: ClassSubjectRecord[]): ScheduleRecord[] 
         startTime: slot.start,
         endTime: slot.end,
         room,
-        slot: (index % slots.length) + 1,
+        slot: slotIndex + 1,
       },
     ];
   });
@@ -1838,7 +2220,7 @@ function createDashboard(
       subjectName: subjectById.get(subject?.subjectId ?? "")?.name ?? "Matematika",
       zScore: Number(((score - overallAverage) / 6).toFixed(2)),
       score,
-      trend: index < 3 ? "UP" : "DOWN",
+      trend: (index < 3 ? "UP" : "DOWN") as "UP" | "DOWN",
       lastUpdated: "2024-08-25T08:30:00.000Z",
     };
   });
