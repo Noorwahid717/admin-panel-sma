@@ -370,7 +370,12 @@ export function createSeedData(): SeedData {
     teachers
   );
   const teacherPreferences = createTeacherPreferences(teachers);
-  const semesterSchedule = createSemesterSchedule(classes, classSubjects, teacherPreferences);
+  const semesterSchedule = createSemesterSchedule(
+    classes,
+    classSubjects,
+    schedules,
+    teacherPreferences
+  );
   const calendarEvents = createCalendarEvents(terms, classes, teachers);
   const examEvents = createExamEvents(terms, classes, subjects);
   const announcements = createAnnouncements(classes);
@@ -1273,39 +1278,110 @@ function createSchedules(classSubjects: ClassSubjectRecord[]): ScheduleRecord[] 
 
   // Track room usage to avoid conflicts: "day-slot-room" => classSubjectId
   const roomUsage = new Map<string, string>();
+  // Track class schedule to avoid double booking: "classId-day-slot" => classSubjectId
+  const classSchedule = new Map<string, string>();
 
-  return classSubjects.flatMap((mapping, index) => {
-    const dayOfWeek = (index % 5) + 1;
-    const slotIndex = index % slots.length;
-    const slot = slots[slotIndex];
+  const schedules: ScheduleRecord[] = [];
 
-    // Find available room for this day-slot combination
-    let roomNumber = 100 + ((index * 7) % 30); // More room options (30 rooms)
-    let attempts = 0;
-    let room = `Ruang ${roomNumber}`;
-    const key = `${dayOfWeek}-${slotIndex}-${room}`;
-
-    // Try to find a free room (max 50 attempts)
-    while (roomUsage.has(key) && attempts < 50) {
-      attempts += 1;
-      roomNumber = 100 + ((roomNumber + 1) % 30);
-      room = `Ruang ${roomNumber}`;
-    }
-
-    roomUsage.set(`${dayOfWeek}-${slotIndex}-${room}`, mapping.id);
-
-    return [
-      {
-        id: `sch_${mapping.id}_${pad(index + 1, 3)}`,
-        classSubjectId: mapping.id,
-        dayOfWeek,
-        startTime: slot.start,
-        endTime: slot.end,
-        room,
-        slot: slotIndex + 1,
-      },
-    ];
+  // Group by class to ensure proper distribution
+  const subjectsByClass = new Map<string, ClassSubjectRecord[]>();
+  classSubjects.forEach((mapping) => {
+    const list = subjectsByClass.get(mapping.classroomId) ?? [];
+    list.push(mapping);
+    subjectsByClass.set(mapping.classroomId, list);
   });
+
+  subjectsByClass.forEach((mappings, classId) => {
+    // Each class has 6 days × 8 slots = 48 slots per week
+    const totalSlots = 6 * 8;
+    const subjectCount = mappings.length;
+
+    // Calculate sessions per subject (aim to fill most slots, 2-4 sessions per subject)
+    const avgSessionsPerSubject = Math.max(2, Math.min(4, Math.floor(totalSlots / subjectCount)));
+
+    let slotCounter = 0;
+    let scheduleId = 0;
+
+    mappings.forEach((mapping, subjectIdx) => {
+      // Determine number of sessions for this subject (2-4, with some variation)
+      const sessionsForSubject = avgSessionsPerSubject + ((subjectIdx % 3) - 1); // varies: -1, 0, +1
+      const actualSessions = Math.max(2, Math.min(5, sessionsForSubject));
+
+      for (let session = 0; session < actualSessions; session += 1) {
+        let placed = false;
+        let attempts = 0;
+
+        while (!placed && attempts < 100) {
+          // Distribute across different days
+          const dayOfWeek = ((slotCounter + attempts * 7) % 6) + 1; // 1-6 (Mon-Sat)
+          const slotIndex = (slotCounter + attempts * 3) % slots.length;
+          const slot = slots[slotIndex];
+
+          // Check if class already has something scheduled at this time
+          const classSlotKey = `${classId}-${dayOfWeek}-${slotIndex + 1}`;
+          if (classSchedule.has(classSlotKey)) {
+            attempts += 1;
+            continue;
+          }
+
+          // Find available room for this day-slot combination
+          let roomNumber = 100 + ((subjectIdx * 7 + session * 11 + attempts) % 30);
+          let roomAttempts = 0;
+          let room = `Ruang ${roomNumber}`;
+          let roomKey = `${dayOfWeek}-${slotIndex}-${room}`;
+
+          // Try to find a free room (max 30 attempts)
+          while (roomUsage.has(roomKey) && roomAttempts < 30) {
+            roomAttempts += 1;
+            roomNumber = 100 + ((roomNumber + 1) % 30);
+            room = `Ruang ${roomNumber}`;
+            roomKey = `${dayOfWeek}-${slotIndex}-${room}`;
+          }
+
+          // Place the schedule
+          roomUsage.set(roomKey, mapping.id);
+          classSchedule.set(classSlotKey, mapping.id);
+
+          schedules.push({
+            id: `sch_${mapping.id}_${pad(scheduleId + 1, 3)}`,
+            classSubjectId: mapping.id,
+            dayOfWeek,
+            startTime: slot.start,
+            endTime: slot.end,
+            room,
+            slot: slotIndex + 1,
+          });
+
+          scheduleId += 1;
+          slotCounter += 1;
+          placed = true;
+        }
+
+        if (!placed) {
+          // Fallback: force place with any available slot
+          const fallbackDay = ((slotCounter + subjectIdx) % 6) + 1;
+          const fallbackSlot = (slotCounter + session) % slots.length;
+          const slot = slots[fallbackSlot];
+          const room = `Ruang ${100 + ((subjectIdx * 5 + session) % 30)}`;
+
+          schedules.push({
+            id: `sch_${mapping.id}_${pad(scheduleId + 1, 3)}`,
+            classSubjectId: mapping.id,
+            dayOfWeek: fallbackDay,
+            startTime: slot.start,
+            endTime: slot.end,
+            room,
+            slot: fallbackSlot + 1,
+          });
+
+          scheduleId += 1;
+          slotCounter += 1;
+        }
+      }
+    });
+  });
+
+  return schedules;
 }
 
 function createGradeComponents(classSubjects: ClassSubjectRecord[]): {
@@ -1714,6 +1790,7 @@ function createTeacherPreferences(teachers: TeacherRecord[]): TeacherPreferenceR
 function createSemesterSchedule(
   classes: ClassRecord[],
   classSubjects: ClassSubjectRecord[],
+  schedules: ScheduleRecord[],
   preferences: TeacherPreferenceRecord[]
 ): SemesterScheduleSlotRecord[] {
   const schedule: SemesterScheduleSlotRecord[] = [];
@@ -1727,17 +1804,27 @@ function createSemesterSchedule(
     preferredSlotLookup.set(pref.teacherId, new Set(pref.preferredSlots));
   });
 
-  classes.forEach((klass, classIndex) => {
-    const relatedSubjects = classSubjects.filter((item) => item.classroomId === klass.id);
-    const teacherRotation = [...relatedSubjects];
+  // Build schedule map from actual schedules: "classId-day-slot" => ScheduleRecord
+  const scheduleMap = new Map<string, ScheduleRecord>();
+  const classSubjectMap = new Map<string, ClassSubjectRecord>();
+  classSubjects.forEach((cs) => classSubjectMap.set(cs.id, cs));
 
+  schedules.forEach((sch) => {
+    const classSubject = classSubjectMap.get(sch.classSubjectId);
+    if (classSubject) {
+      const key = `${classSubject.classroomId}-${sch.dayOfWeek}-${sch.slot}`;
+      scheduleMap.set(key, sch);
+    }
+  });
+
+  classes.forEach((klass) => {
     days.forEach((day) => {
       for (let slot = 1; slot <= slotsPerDay; slot += 1) {
-        const assignmentIndex =
-          (classIndex * days.length * slotsPerDay + (day - 1) * slotsPerDay + (slot - 1)) %
-          teacherRotation.length;
-        const mapping = teacherRotation[assignmentIndex];
-        if (!mapping) {
+        const key = `${klass.id}-${day}-${slot}`;
+        const existingSchedule = scheduleMap.get(key);
+
+        if (!existingSchedule) {
+          // Empty slot
           schedule.push({
             id: `sem_${klass.id}_${day}_${slot}`,
             classId: klass.id,
@@ -1747,23 +1834,27 @@ function createSemesterSchedule(
             subjectId: null,
             status: "EMPTY",
           });
-          continue;
+        } else {
+          // Filled slot from actual schedule
+          const classSubject = classSubjectMap.get(existingSchedule.classSubjectId);
+          if (!classSubject) continue;
+
+          const preferredDays = preferredDayLookup.get(classSubject.teacherId) ?? new Set<number>();
+          const preferredSlots =
+            preferredSlotLookup.get(classSubject.teacherId) ?? new Set<number>();
+          const inPreference = preferredDays.has(day) && preferredSlots.has(slot);
+
+          schedule.push({
+            id: `sem_${klass.id}_${day}_${slot}`,
+            classId: klass.id,
+            dayOfWeek: day,
+            slot,
+            teacherId: classSubject.teacherId,
+            subjectId: classSubject.subjectId,
+            status: inPreference ? "PREFERENCE" : "COMPROMISE",
+            locked: inPreference && slot % 3 === 0,
+          });
         }
-
-        const preferredDays = preferredDayLookup.get(mapping.teacherId) ?? new Set<number>();
-        const preferredSlots = preferredSlotLookup.get(mapping.teacherId) ?? new Set<number>();
-        const inPreference = preferredDays.has(day) && preferredSlots.has(slot);
-
-        schedule.push({
-          id: `sem_${klass.id}_${day}_${slot}`,
-          classId: klass.id,
-          dayOfWeek: day,
-          slot,
-          teacherId: mapping.teacherId,
-          subjectId: mapping.subjectId,
-          status: inPreference ? "PREFERENCE" : "COMPROMISE",
-          locked: inPreference && slot % 3 === 0,
-        });
       }
     });
   });
