@@ -606,93 +606,221 @@ clean: ## Clean build artifacts
 
 ## 📝 Phase 3: Student Management & Assessment (Week 9-11)
 
-**Status**: ⏳ Pending Documentation
+**Status**: 📋 Documented  
+**Detailed Documentation**: [PHASE_3_STUDENT_ASSESSMENT.md](./PHASE_3_STUDENT_ASSESSMENT.md)
 
-### Planned Scope
+### Overview
 
-- Students CRUD operations
-- Enrollment management (class & term)
+- Students CRUD operations with bulk import
+- Enrollment management (class & term enrollment, transfers)
 - Grade components & configurations
-- Grade entry & calculations
-- Report generation
+- Grade entry & calculations (weighted/average schemes)
+- Comprehensive grade reports and analytics
 
-### Estimated Deliverables
+### Key Deliverables
 
-- ~25 API endpoints
-- Student enrollment workflows
-- Grade calculation engine
-- Report PDF generation
+- 28 API endpoints across 4 domains (students, enrollments, grade components, grades)
+- Student enrollment workflows with transfer support
+- Grade calculation engine (weighted & average schemes)
+- Bulk grade entry functionality
+- Student & class grade reports with statistics
+- Grade analytics and distribution
 
-**Documentation**: Coming soon
+### Success Metrics
+
+- Response time < 200ms
+- 100% grade calculation accuracy
+- Bulk operations handle 500+ students
+- Report generation < 3 seconds
+
+**👉 [View Full Phase 3 Documentation](./PHASE_3_STUDENT_ASSESSMENT.md)**
 
 ---
 
 ## 📊 Phase 4: Attendance & Communication (Week 12-14)
 
-**Status**: ⏳ Pending Documentation
+**Status**: 📋 Documented
 
-### Planned Scope
+### Overview
 
-- Daily attendance tracking
-- Subject attendance per session
-- Announcements system
-- Behavior notes
-- Calendar events
+Implement attendance tracking systems (daily & subject-based), announcements with audience targeting, behavior notes management, and calendar event scheduling. This phase builds upon student enrollment data to provide comprehensive monitoring and communication features.
 
-### Estimated Deliverables
+### Key Deliverables
 
-- ~20 API endpoints
-- Attendance reporting
-- Multi-audience announcements
-- Event scheduling
+- **24 API Endpoints** across 4 domains:
+  - Daily Attendance: 6 endpoints (mark, bulk mark, reports, history)
+  - Subject Attendance: 3 endpoints (mark, bulk mark, session reports)
+  - Announcements: 5 endpoints (CRUD + audience filtering)
+  - Behavior Notes: 5 endpoints (CRUD + student summary)
+  - Calendar Events: 5 endpoints (CRUD + date filtering)
 
-**Documentation**: Coming soon
+### Key Features
+
+- **Daily Attendance**: One record per student per day (H/S/I/A status)
+- **Subject Attendance**: Track attendance per class session
+- **Bulk Operations**: Mark 100+ students at once
+- **Announcements**: Audience targeting (ALL, GURU, SISWA, CLASS), priority levels, pinned support
+- **Behavior Tracking**: Positive/negative/neutral notes with point system
+- **Calendar Events**: Multiple event types (exam, holiday, meeting, activity)
+- **Attendance Reports**: Class reports, student history, statistics
+
+### Database Models
+
+- `daily_attendance`: Daily attendance records with enrollment linkage
+- `subject_attendance`: Session-based attendance with schedule linkage
+- `announcements`: System-wide announcements with expiration
+- `behavior_notes`: Student behavior tracking with points
+- `calendar_events`: School events with date ranges
+
+### Success Metrics
+
+- Attendance endpoints < 150ms response time
+- Bulk attendance marking: 100+ students in < 2 seconds
+- Attendance calculation accuracy: 100%
+- Announcements delivered to correct audience
+- Calendar sync across timezones
+
+**👉 [View Full Phase 4 Documentation](./PHASE_4_ATTENDANCE_COMMUNICATION.md)**
 
 ---
 
 ## 📈 Phase 5: Analytics & Optimization (Week 15-17)
 
-**Status**: ⏳ Pending Documentation
+**Status**: 📋 Documented
 
-### Planned Scope
+### Overview
 
-- Dashboard analytics
-- Grade distribution analysis
-- Attendance statistics
-- Outlier detection
-- Performance optimization
+Build comprehensive analytics dashboards with real-time performance metrics, implement Redis caching layer for performance optimization, create materialized views for complex statistics, and set up production monitoring infrastructure.
 
-### Estimated Deliverables
+### Key Deliverables
 
-- Analytics aggregation APIs
-- Caching layer implementation
-- Query optimization
-- Report generation optimization
+- **11 API Endpoints** across analytics domains:
+  - Dashboard: 1 endpoint (comprehensive overview)
+  - Class Analytics: 1 endpoint (class-specific stats)
+  - Student Analytics: 1 endpoint (student performance)
+  - Subject Analytics: 1 endpoint (subject statistics)
+  - Attendance Analytics: 1 endpoint (attendance trends)
+  - Grade Analytics: 1 endpoint (grade distribution)
+  - Leaderboards: 3 endpoints (GPA, attendance, behavior)
+  - Performance Trends: 1 endpoint (trends over time)
+  - Cache Management: 1 endpoint (refresh views)
 
-**Documentation**: Coming soon
+### Key Features
+
+- **Materialized Views**: Pre-computed statistics (class, student, subject)
+- **Redis Caching**: Multi-level caching strategy (15min-1hr TTLs)
+- **Leaderboards**: Sorted sets for top performers
+- **Dashboard Overview**: Real-time metrics with attendance/grade/behavior stats
+- **Performance Trends**: Weekly/monthly aggregations
+- **Cache-Aside Pattern**: Automatic cache population on miss
+- **Database Optimization**: Covering indexes, partial indexes, query optimization
+- **Monitoring**: Prometheus metrics + Grafana dashboards
+
+### Database Optimizations
+
+- 3 materialized views (`mv_class_statistics`, `mv_student_performance`, `mv_subject_statistics`)
+- Covering indexes for common queries
+- Partial indexes for active records
+- Connection pooling optimization (25 max connections)
+
+### Caching Strategy
+
+- Statistics cache: 1 hour TTL
+- Leaderboards cache: 30 minutes TTL
+- Dashboard cache: 15 minutes TTL
+- Announcements cache: 5 minutes TTL
+- Calendar cache: 1 day TTL
+
+### Success Metrics
+
+- Dashboard loads in < 200ms (with cache)
+- Analytics queries < 500ms (without cache)
+- Cache hit rate > 80%
+- Materialized views refresh < 30 seconds
+- Support 1000+ concurrent users
+- API p95 latency < 300ms
+
+**👉 [View Full Phase 5 Documentation](./PHASE_5_ANALYTICS_OPTIMIZATION.md)**
 
 ---
 
 ## 🔄 Phase 6: Legacy Decommission (Week 18-20)
 
-**Status**: ⏳ Pending Documentation
+**Status**: 📋 Documented
 
-### Planned Scope
+### Overview
 
-- Full migration validation
-- NestJS backend shutdown
-- Data cleanup & archival
-- Production monitoring
-- Team training
+Final validation of complete migration, safe decommission of NestJS backend, production hardening with security audit, disaster recovery setup, comprehensive documentation finalization, and team training handover.
 
-### Estimated Deliverables
+### Key Deliverables
 
-- Migration completion report
-- Performance benchmarks
-- Updated documentation
-- Training materials
+- **Migration Validation**:
 
-**Documentation**: Coming soon
+  - Comprehensive functional testing checklist (100+ items)
+  - Data integrity verification scripts
+  - Performance benchmarking (NestJS vs Golang comparison)
+  - Automated validation scripts
+
+- **Decommission Strategy**:
+
+  - 3-week phased shutdown timeline
+  - Rollback plan (< 5 minute recovery)
+  - Graceful shutdown procedures
+  - Archive & cleanup processes
+
+- **Production Hardening**:
+
+  - Security audit checklist (30+ items)
+  - Rate limiting implementation (Redis-based)
+  - Security headers middleware
+  - Input validation & sanitization
+
+- **Disaster Recovery**:
+
+  - Automated backup strategy (daily full + 6hr incremental)
+  - Backup verification procedures
+  - Disaster recovery runbook (3 scenarios)
+  - RTO: 2-4 hours, RPO: < 15 minutes
+
+- **Documentation**:
+
+  - API documentation (Swagger/OpenAPI)
+  - Deployment guide
+  - Operations runbook
+  - Developer guide
+  - Migration summary report
+
+- **Team Training**:
+  - 4 training sessions (9 hours total)
+  - Hands-on labs
+  - Troubleshooting guides
+
+### Decommission Timeline
+
+- **Week 18**: Final validation, security audit, rollback preparation
+- **Week 19**: Route 100% to Golang, disable NestJS writes, stop background jobs
+- **Week 20**: Complete shutdown, archive, database cleanup, handover, retrospective
+
+### Expected Performance Improvements
+
+- API response time: 55% faster (450ms → 200ms)
+- Memory usage: 67% reduction (1.2GB → 400MB)
+- Request capacity: 4x increase (500 → 2000 req/s)
+- Docker image size: 94% smaller (850MB → 50MB)
+- Cost savings: ~$430/month (~$5,160/year)
+
+### Success Metrics
+
+- 100% feature parity validated
+- Zero data loss
+- Error rate < 0.1%
+- Uptime > 99.9%
+- All security items addressed
+- Disaster recovery tested
+- Team fully trained
+- Stakeholder approval obtained
+
+**👉 [View Full Phase 6 Documentation](./PHASE_6_LEGACY_DECOMMISSION.md)**
 
 ---
 
@@ -700,16 +828,113 @@ clean: ## Clean build artifacts
 
 ### Current Status
 
-- ✅ Phase 0: Infrastructure setup planned
-- ✅ Phase 1: Authentication documented ([Details](./PHASE_1_AUTH_USER_MANAGEMENT.md))
-- ✅ Phase 2: Academic management documented ([Details](./PHASE_2_ACADEMIC_MANAGEMENT.md))
-- ⏳ Phase 3-6: Awaiting documentation
+- ✅ Phase 0: Infrastructure setup documented
+- ✅ Phase 1: Authentication & User Management documented ([Details](./PHASE_1_AUTH_USER_MANAGEMENT.md))
+- ✅ Phase 2: Academic Management documented ([Details](./PHASE_2_ACADEMIC_MANAGEMENT.md))
+- ✅ Phase 3: Student Management & Assessment documented ([Details](./PHASE_3_STUDENT_ASSESSMENT.md))
+- ✅ Phase 4: Attendance & Communication documented ([Details](./PHASE_4_ATTENDANCE_COMMUNICATION.md))
+- ✅ Phase 5: Analytics & Optimization documented ([Details](./PHASE_5_ANALYTICS_OPTIMIZATION.md))
+- ✅ Phase 6: Legacy Decommission documented ([Details](./PHASE_6_LEGACY_DECOMMISSION.md))
+
+### Documentation Summary
+
+**Total Migration Plan:**
+
+- **Duration**: 20 weeks (4-5 months)
+- **Total API Endpoints**: ~100 endpoints across 6 phases
+- **Database Tables**: 20+ tables with optimized schemas
+- **Performance Target**: 55% faster response times, 67% less memory
+- **Cost Savings**: ~$5,160/year in infrastructure costs
+
+**Phase Breakdown:**
+
+1. **Phase 1**: 12 endpoints (Auth + User Management)
+2. **Phase 2**: 27 endpoints (Academic Management)
+3. **Phase 3**: 28 endpoints (Student & Assessment)
+4. **Phase 4**: 24 endpoints (Attendance & Communication)
+5. **Phase 5**: 11 endpoints (Analytics & Optimization)
+6. **Phase 6**: Migration validation & decommission
 
 ### Immediate Actions
 
-1. Review Phase 1 & 2 documentation
-2. Begin Phase 0 implementation (infrastructure setup)
-3. Prepare Phase 3 documentation (Student & Assessment)
-4. Setup development environment per Phase 0 guidelines
+1. ✅ Review all phase documentation
+2. Team review & feedback collection
+3. Finalize technology stack decisions
+4. Set up development environment
+5. Begin Phase 1 implementation
+
+### Risk Mitigation
+
+- Feature flags for gradual rollout
+- Parallel running with NestJS (Weeks 12-18)
+- Comprehensive testing at each phase
+- Rollback plan (< 5 minute recovery)
+- Continuous monitoring & alerting
+
+---
+
+## 🎯 Success Metrics Overview
+
+### Technical Metrics
+
+- API response time (p95): < 300ms
+- Database query time (p95): < 100ms
+- Cache hit rate: > 80%
+- Error rate: < 0.1%
+- Test coverage: > 85%
+- Uptime: > 99.9%
+
+### Business Metrics
+
+- Zero data loss during migration
+- 100% feature parity maintained
+- Infrastructure cost reduction: ~30%
+- Developer productivity: Faster builds (83% faster)
+- User satisfaction: Improved performance perceived
+
+### Migration Metrics
+
+- Phased rollout: 0% → 10% → 50% → 100%
+- Parallel running: Minimum 2 weeks
+- Rollback readiness: < 5 minutes
+- Team training completion: 100%
+- Documentation completeness: 100%
+
+---
+
+## 📖 Documentation Index
+
+### Architecture & Planning
+
+- [Backend Migration Plan](./BACKEND_MIGRATION_PLAN.md) (This document)
+- [System Architecture](./sis-backend-architecture.md)
+- [System Overview](./sis-system-overview.md)
+
+### Phase Documentation
+
+- [Phase 1: Authentication & User Management](./PHASE_1_AUTH_USER_MANAGEMENT.md)
+- [Phase 2: Academic Management](./PHASE_2_ACADEMIC_MANAGEMENT.md)
+- [Phase 3: Student Management & Assessment](./PHASE_3_STUDENT_ASSESSMENT.md)
+- [Phase 4: Attendance & Communication](./PHASE_4_ATTENDANCE_COMMUNICATION.md)
+- [Phase 5: Analytics & Optimization](./PHASE_5_ANALYTICS_OPTIMIZATION.md)
+- [Phase 6: Legacy Decommission](./PHASE_6_LEGACY_DECOMMISSION.md)
+
+### Operations
+
+- [Railway Deployment Guide](./RAILWAY_DEPLOYMENT_GUIDE.md)
+- [Worker Deployment Guide](./RAILWAY_WORKER_DEPLOYMENT_GUIDE.md)
+
+### Development
+
+- [Frontend Plan](./sis-frontend-plan.md)
+- [End-to-End Scenarios](./end-to-end-scenarios.md)
+- [Changelog](./CHANGELOG.md)
+
+---
+
+**Document Version**: 2.0  
+**Last Updated**: October 24, 2024  
+**Status**: Complete - All 6 phases documented  
+**Next Review**: Before Phase 1 implementation kickoff 2. Begin Phase 0 implementation (infrastructure setup) 3. Prepare Phase 3 documentation (Student & Assessment) 4. Setup development environment per Phase 0 guidelines
 
 ---
