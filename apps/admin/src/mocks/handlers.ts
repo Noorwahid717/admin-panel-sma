@@ -536,6 +536,42 @@ const getValue = (record: Record<string, any>, path: string) => {
     .reduce<any>((acc, key) => (acc && typeof acc === "object" ? acc[key] : undefined), record);
 };
 
+const normalizeFilterKey = (key: string) => {
+  if (key.endsWith("[]")) {
+    return key.slice(0, -2);
+  }
+
+  const indexedMatch = key.match(/^(.*)\[\d+\]$/);
+  if (indexedMatch) {
+    return indexedMatch[1];
+  }
+
+  return key;
+};
+
+const appendFilterValue = (filters: Record<string, unknown>, rawKey: string, value: unknown) => {
+  const key = normalizeFilterKey(rawKey);
+  const existing = filters[key];
+
+  if (existing === undefined) {
+    filters[key] = value;
+    return;
+  }
+
+  if (Array.isArray(existing)) {
+    if (!existing.includes(value)) {
+      filters[key] = [...existing, value];
+    }
+    return;
+  }
+
+  if (existing === value) {
+    return;
+  }
+
+  filters[key] = [existing, value];
+};
+
 const parseFilters = (url: URL) => {
   const ignored = new Set([
     "filter",
@@ -576,9 +612,7 @@ const parseFilters = (url: URL) => {
   url.searchParams.forEach((value, key) => {
     if (ignored.has(key) || key.startsWith("ids[")) return;
     if (value === null || value === "") return;
-    if (typeof filters[key] === "undefined") {
-      filters[key] = value;
-    }
+    appendFilterValue(filters, key, value);
   });
 
   return filters;
